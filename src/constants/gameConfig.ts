@@ -1,0 +1,61 @@
+// ============================================================
+//  constants/gameConfig.ts
+//  ゲーム全体で使用する設定値・定数
+// ============================================================
+
+export const GAME_CONFIG = {
+  // ゲームループ設定
+  TICK_MS: 50,                    // ゲームループの更新間隔（ミリ秒）
+  MAX_DELTA_TIME: 0.2,            // 最大デルタタイム（秒）
+
+  // 位置設定
+  HERO_POSITION_X: 20,            // 主人公のX座標（%）
+  ENEMY_STOP_OFFSET: 8,           // 敵が止まる位置のオフセット（主人公のすぐ右で止まる）
+  ENEMY_MIN_X: 20,                // 敵が通り越せない最小X座標（主人公の位置）
+  ENEMY_DESPAWN_X: -20,           // 敵が削除されるX座標
+  ENEMY_SPAWN_X: 110,             // 敵が出現するX座標
+  ENEMY_MOVE_SPEED: 15,           // 敵の移動速度（%/秒）
+
+  // 戦闘設定
+  DAMAGE_VARIANCE_MIN: 0.85,      // ダメージの最小倍率
+  DAMAGE_VARIANCE_MAX: 1.15,      // ダメージの最大倍率
+  ENEMY_ATTACK_INTERVAL: 1.0,     // 敵の攻撃間隔（秒）
+  ENEMY_DAMAGE_MULTIPLIER: 1/7,   // 敵のダメージ計算倍率
+  ENEMY_DAMAGE_VARIANCE_MIN: 0.8, // 敵のダメージ最小倍率
+  ENEMY_DAMAGE_VARIANCE_MAX: 1.2, // 敵のダメージ最大倍率
+  ATTACK_RANGE: 5,                // 攻撃可能範囲
+
+  // クリティカルヒット設定
+  CRITICAL_HIT_CHANCE: 0.15,      // アップグレードで追加されるクリティカル率（15%）
+  CRITICAL_HIT_MULTIPLIER: 2.0,   // クリティカル時のダメージ倍率
+  CRITICAL_ANIMATION_DURATION: 300, // クリティカル演出時間（ミリ秒）
+
+  // ボス設定
+  BOSS_SPAWN_CHANCE: 0.1,         // ボス出現確率（10%）
+  BOSS_HP_MULTIPLIER: 5.0,        // ボスのHP倍率
+  BOSS_REWARD_MULTIPLIER: 3.0,    // ボスの報酬倍率
+  BOSS_SIZE_MULTIPLIER: 1.5,      // ボスのサイズ倍率
+
+  // レベルアップ設定
+  XP_MULTIPLIER: 1.55,            // レベルアップ時のXP必要量倍率
+  LEVEL_UP_ATK_BONUS: 2,          // レベルアップ時の攻撃力ボーナス
+  LEVEL_UP_HP_BONUS: 10,          // レベルアップ時のHP最大値ボーナス
+
+  // 敵のスケーリング
+  ENEMY_TIER_LEVEL_DIVISOR: 4,    // レベル÷この値で敵のTierを決定
+  ENEMY_HP_SCALE_PER_LEVEL: 0.08, // レベルごとの敵HP増加率
+  ENEMY_GOLD_SCALE_PER_LEVEL: 0.1,// レベルごとの敵Gold増加率
+  ENEMY_XP_SCALE_PER_LEVEL: 0.05, // レベルごとの敵XP増加率
+
+  // アップグレード設定
+  UPGRADE_COST_MULTIPLIER: 1.6,   // レベルアップごとのコスト倍率
+
+  // UI/エフェクト設定
+  ATTACK_ANIMATION_DURATION: 180, // 攻撃アニメーション時間（ミリ秒）
+  HIT_ANIMATION_DURATION: 250,    // ダメージアニメーション時間（ミリ秒）
+  DAMAGE_NUMBER_DURATION: 1000,   // ダメージ数字の表示時間（ミリ秒）
+
+  // ステージ設定
+  STAGE_LEVEL_DIVISOR: 6,         // レベル÷この値でステージ番号を決定
+  MAX_STAGE: 5,                   // 最大ステージ数
+} as const;
