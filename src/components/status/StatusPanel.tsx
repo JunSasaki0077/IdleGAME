@@ -10,7 +10,7 @@ import { ResourceBar } from './ResourceBar';
 import { GoldDisplay } from './GoldDisplay';
 import { UpgradeList } from './UpgradeList';
 import { getCurrentClass } from '../../state/gameState';
-import type { GameState } from '../../types/gameTypes';
+import type { GameState } from '../../state/gameState';
 import type { Upgrade } from '../../types/gameTypes';
 
 // ─────────────────────────────────────────

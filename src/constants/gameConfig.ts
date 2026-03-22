@@ -58,4 +58,8 @@ export const GAME_CONFIG = {
   // ステージ設定
   STAGE_LEVEL_DIVISOR: 6,         // レベル÷この値でステージ番号を決定
   MAX_STAGE: 5,                   // 最大ステージ数
+
+  // オフライン報酬設定
+  OFFLINE_MAX_SECONDS: 28800,     // オフライン報酬の最大蓄積時間（8時間）
+  OFFLINE_EFFICIENCY: 0.5,        // オフライン中の資源獲得効率（50%）
 } as const;

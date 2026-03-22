@@ -33,6 +33,8 @@ export const GameScreen: React.FC = () => {
         upgrades={upgrades}
         onBuy={buyUpgrade}
       />
+
+
     </View>
   );
 };

@@ -1,11 +1,46 @@
 // ============================================================
 //  state/gameState.ts
-//  ゲームの状態定義・初期値・更新ロジック
+//  Projectile（弾）をゲームステートに追加
 // ============================================================
 
 import { ENEMY_DEFS, CHARACTER_CLASSES } from '../constants/gameData';
-import { GAME_CONFIG } from '../constants/gameConfig';
-import type { Enemy, CharacterClass, GameState } from '../types/gameTypes';
+import { getSkillDef } from '../constants/skillData';
+import type { Enemy, CharacterClass, Projectile } from '../types/gameTypes';
+import type { AcquiredSkill, SkillEffect } from '../types/skillTypes';
+
+// ─────────────────────────────────────────
+//  ゲーム状態の型
+// ─────────────────────────────────────────
+
+export type GameState = {
+  gold: number;
+  xp: number;
+  level: number;
+  maxXp: number;
+  hp: number;
+  maxHp: number;
+  atk: number;
+  atkSpeed: number;
+  goldPerSec: number;
+  xpPerSec: number;
+
+  // スキルシステム
+  acquiredSkills: AcquiredSkill[];
+  skillPoints: number;
+  pendingSkillChoice: boolean;
+
+  // 敵
+  enemies: Enemy[];
+  spawnInterval: number;
+
+  // 弾（新規追加）
+  projectiles: Projectile[];
+
+  // タイマー
+  spawnTimer: number;
+  atkTimer: number;
+  enemyAtkTimer: number;
+};
 
 // ─────────────────────────────────────────
 //  初期ステート
@@ -22,9 +57,12 @@ export const INITIAL_STATE: GameState = {
   atkSpeed: 1.2,
   goldPerSec: 1,
   xpPerSec: 2,
-  critChance: 0,
+  acquiredSkills: [],
+  skillPoints: 0,
+  pendingSkillChoice: false,
   enemies: [],
   spawnInterval: 3.5,
+  projectiles: [],
   spawnTimer: 0,
   atkTimer: 0,
   enemyAtkTimer: 0,
@@ -34,83 +72,129 @@ export const INITIAL_STATE: GameState = {
 //  ロジック関数
 // ─────────────────────────────────────────
 
-/** レベルに応じた現在のクラスを返す */
 export function getCurrentClass(level: number): CharacterClass {
-  if (CHARACTER_CLASSES.length === 0) {
-    throw new Error('CHARACTER_CLASSES is empty');
-  }
   return [...CHARACTER_CLASSES]
     .reverse()
     .find((c) => level >= c.minLevel) ?? CHARACTER_CLASSES[0];
 }
 
-/** 敵を新しくスポーン */
 let enemyIdCounter = 0;
 export function createEnemy(level: number): Enemy {
-  if (ENEMY_DEFS.length === 0) {
-    throw new Error('ENEMY_DEFS is empty');
-  }
-
-  const maxTier = Math.min(
-    Math.floor(level / GAME_CONFIG.ENEMY_TIER_LEVEL_DIVISOR),
-    ENEMY_DEFS.length - 1
-  );
+  const maxTier = Math.min(Math.floor(level / 4), ENEMY_DEFS.length - 1);
   const def = ENEMY_DEFS[Math.floor(Math.random() * (maxTier + 1))];
-
-  // ボス判定
-  const isBoss = Math.random() < GAME_CONFIG.BOSS_SPAWN_CHANCE;
-
-  const scaleFactor = 1 + level * GAME_CONFIG.ENEMY_HP_SCALE_PER_LEVEL;
-  const baseHp = Math.floor(def.baseHp * scaleFactor);
-  const hp = isBoss ? Math.floor(baseHp * GAME_CONFIG.BOSS_HP_MULTIPLIER) : baseHp;
-
-  const rewardMultiplier = isBoss ? GAME_CONFIG.BOSS_REWARD_MULTIPLIER : 1;
-
+  const scaleFactor = 1 + level * 0.08;
+  const hp = Math.floor(def.baseHp * scaleFactor);
   return {
     id: enemyIdCounter++,
     def,
     hp,
     maxHp: hp,
-    x: GAME_CONFIG.ENEMY_SPAWN_X,
-    isBoss,
+    x: 110,
     reward: {
-      gold: Math.floor(def.reward.gold * (1 + level * GAME_CONFIG.ENEMY_GOLD_SCALE_PER_LEVEL) * rewardMultiplier),
-      xp:   Math.floor(def.reward.xp   * (1 + level * GAME_CONFIG.ENEMY_XP_SCALE_PER_LEVEL) * rewardMultiplier),
+      gold: Math.floor(def.reward.gold * (1 + level * 0.1)),
+      xp:   Math.floor(def.reward.xp   * (1 + level * 0.05)),
     },
   };
 }
 
-/** レベルアップ処理（連続レベルアップにも対応） */
+/** 弾を生成する */
+let projectileIdCounter = 0;
+export function createProjectile(
+  kind: Projectile['kind'],
+  startX: number,
+  y: number,
+  damage: number,
+): Projectile {
+  return {
+    id: projectileIdCounter++,
+    kind,
+    x: startX,
+    y,
+    speed: 80, // 1秒で画面の80%移動
+    damage,
+    hit: false,
+  };
+}
+
+/** 習得済みスキルから合計エフェクトを計算 */
+export function calcSkillEffects(acquiredSkills: AcquiredSkill[]): SkillEffect {
+  let totalAtkMultiplier = 1;
+  let maxChainCount = 1;
+  let maxSlowAmount = 0;
+
+  for (const acquired of acquiredSkills) {
+    const def = getSkillDef(acquired.defId);
+    if (!def) continue;
+    const effect = def.getEffect(acquired.skillLv);
+    if (effect.atkMultiplier)  totalAtkMultiplier *= effect.atkMultiplier;
+    if (effect.chainCount)     maxChainCount = Math.max(maxChainCount, effect.chainCount);
+    if (effect.slowAmount)     maxSlowAmount = Math.max(maxSlowAmount, effect.slowAmount);
+  }
+
+  return {
+    atkMultiplier: totalAtkMultiplier,
+    chainCount:    maxChainCount,
+    slowAmount:    maxSlowAmount,
+  };
+}
+
+export function acquireSkill(state: GameState, skillDefId: string): GameState {
+  const existing = state.acquiredSkills.find((s) => s.defId === skillDefId);
+  if (existing) {
+    return {
+      ...state,
+      pendingSkillChoice: false,
+      acquiredSkills: state.acquiredSkills.map((s) =>
+        s.defId === skillDefId ? { ...s, skillLv: s.skillLv + 1 } : s
+      ),
+    };
+  }
+  return {
+    ...state,
+    pendingSkillChoice: false,
+    acquiredSkills: [...state.acquiredSkills, { defId: skillDefId, skillLv: 1 }],
+  };
+}
+
+export function upgradeSkillWithSP(state: GameState, skillDefId: string): GameState {
+  if (state.skillPoints <= 0) return state;
+  const def = getSkillDef(skillDefId);
+  if (!def) return state;
+  const existing = state.acquiredSkills.find((s) => s.defId === skillDefId);
+  if (!existing || existing.skillLv >= def.maxLv) return state;
+  return {
+    ...state,
+    skillPoints: state.skillPoints - 1,
+    acquiredSkills: state.acquiredSkills.map((s) =>
+      s.defId === skillDefId ? { ...s, skillLv: s.skillLv + 1 } : s
+    ),
+  };
+}
+
 export function applyLevelUp(state: GameState): GameState {
   let s = { ...state };
   while (s.xp >= s.maxXp) {
     s = {
       ...s,
-      xp:    s.xp - s.maxXp,
-      level: s.level + 1,
-      maxXp: Math.floor(s.maxXp * GAME_CONFIG.XP_MULTIPLIER),
-      atk:   s.atk + GAME_CONFIG.LEVEL_UP_ATK_BONUS,
-      maxHp: s.maxHp + GAME_CONFIG.LEVEL_UP_HP_BONUS,
-      hp:    s.maxHp + GAME_CONFIG.LEVEL_UP_HP_BONUS, // レベルアップでHP全回復
+      xp:                 s.xp - s.maxXp,
+      level:              s.level + 1,
+      maxXp:              Math.floor(s.maxXp * 1.55),
+      atk:                s.atk + 2,
+      maxHp:              s.maxHp + 10,
+      hp:                 s.maxHp + 10,
+      skillPoints:        s.skillPoints + 1,
+      pendingSkillChoice: true,
     };
   }
   return s;
 }
 
-/** 1フレーム分のゲーム更新（dt = 経過秒数） */
 export function tickGame(state: GameState, dt: number): GameState {
   let s = { ...state };
-
-  // パッシブリソース増加
-  s.gold += s.goldPerSec * dt;
-  s.xp   += s.xpPerSec   * dt;
-
-  // タイマー更新
+  s.gold       += s.goldPerSec * dt;
+  s.xp         += s.xpPerSec   * dt;
   s.spawnTimer += dt;
   s.atkTimer   += dt;
-
-  // レベルアップチェック
   s = applyLevelUp(s);
-
   return s;
 }

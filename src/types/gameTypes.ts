@@ -3,39 +3,7 @@
 //  ゲーム全体で使う型定義
 // ============================================================
 
-// ─────────────────────────────────────────
-//  ゲーム状態
-// ─────────────────────────────────────────
-
-export type GameState = {
-  // リソース
-  gold: number;
-  xp: number;
-
-  // レベル
-  level: number;
-  maxXp: number;
-
-  // HP
-  hp: number;
-  maxHp: number;
-
-  // ステータス
-  atk: number;
-  atkSpeed: number;      // 攻撃回数/秒
-  goldPerSec: number;
-  xpPerSec: number;
-  critChance: number;    // クリティカル率
-
-  // 敵管理
-  enemies: Enemy[];
-  spawnInterval: number; // 次の敵が出るまでの秒数
-
-  // 内部タイマー
-  spawnTimer: number;
-  atkTimer: number;
-  enemyAtkTimer: number; // 敵の攻撃タイマー
-};
+import type { GameState } from '../state/gameState';
 
 // ─────────────────────────────────────────
 //  キャラクター
@@ -68,12 +36,38 @@ export type Enemy = {
   def: EnemyDef;
   hp: number;
   maxHp: number;
-  x: number;       // 画面上のX座標（%）
-  isBoss: boolean; // ボス敵かどうか
+  x: number;
+  isBoss?: boolean;
   reward: {
     gold: number;
     xp: number;
   };
+};
+
+// ─────────────────────────────────────────
+//  弾（Projectile）
+// ─────────────────────────────────────────
+
+export type ProjectileKind = 'fireball' | 'thunder' | 'ice';
+
+export type Projectile = {
+  id: number;
+  kind: ProjectileKind;
+  x: number;
+  y: number;
+  speed: number;
+  damage: number;
+  hit: boolean;
+};
+
+export const PROJECTILE_VISUALS: Record<ProjectileKind, {
+  emoji: string;
+  color: string;
+  size: number;
+}> = {
+  fireball: { emoji: '🔥', color: '#ff6600', size: 20 },
+  thunder:  { emoji: '⚡', color: '#ffdd00', size: 18 },
+  ice:      { emoji: '❄️', color: '#66ddff', size: 18 },
 };
 
 // ─────────────────────────────────────────
@@ -85,8 +79,8 @@ export type Upgrade = {
   icon: string;
   name: string;
   desc: string;
-  baseCost: number;
-  level: number;
+  cost: number;
+  bought: boolean;
   apply: (state: GameState) => GameState;
 };
 
@@ -100,21 +94,4 @@ export type DamageNumber = {
   x: number;
   y: number;
   color: string;
-  isCritical?: boolean; // クリティカルヒットかどうか
-};
-
-// ─────────────────────────────────────────
-//  パーティクルエフェクト
-// ─────────────────────────────────────────
-
-export type Particle = {
-  id: number;
-  x: number;
-  y: number;
-  vx: number;      // X方向の速度
-  vy: number;      // Y方向の速度
-  emoji: string;   // 表示する絵文字
-  scale: number;   // スケール
-  opacity: number; // 透明度
-  life: number;    // 残り寿命（0〜1）
 };

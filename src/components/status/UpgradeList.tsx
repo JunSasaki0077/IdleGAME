@@ -3,9 +3,8 @@
 //  アップグレード一覧と購入ボタン
 // ============================================================
 
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { GAME_CONFIG } from '../../constants/gameConfig';
+import React, { useCallback, useMemo } from 'react';
+import { View, Text, FlatList, Pressable } from 'react-native';
 import { formatNumber } from '../../utils/format';
 import type { Upgrade } from '../../types/gameTypes';
 
@@ -23,20 +22,22 @@ type Props = {
 //  個別アップグレードアイテム
 // ─────────────────────────────────────────
 
-const UpgradeItem: React.FC<{
+type ItemProps = {
   upgrade: Upgrade;
   canAfford: boolean;
-  currentCost: number;
   onBuy: (id: string) => void;
-}> = React.memo(({ upgrade, canAfford, currentCost, onBuy }) => {
+};
+
+const UpgradeItem: React.FC<ItemProps> = React.memo(({ upgrade, canAfford, onBuy }) => {
+  const disabled = upgrade.bought || !canAfford;
+
   return (
-    <TouchableOpacity
+    <Pressable
       className={`flex-row items-center gap-2.5 bg-[#0d0d20] border border-[#2a2a4a] rounded-lg py-2 px-3 mb-1.5 ${
-        !canAfford ? 'opacity-35' : ''
+        disabled ? 'opacity-35' : ''
       }`}
       onPress={() => onBuy(upgrade.id)}
-      disabled={!canAfford}
-      activeOpacity={0.7}
+      disabled={disabled}
     >
       {/* アイコン */}
       <Text className="text-xl">{upgrade.icon}</Text>
@@ -45,9 +46,9 @@ const UpgradeItem: React.FC<{
       <View className="flex-1">
         <View className="flex-row items-center gap-1.5 mb-0.5">
           <Text className="text-xs font-bold text-game-text">{upgrade.name}</Text>
-          {upgrade.level > 0 && (
+          {upgrade.bought && (
             <View className="bg-game-purple-dark border border-game-purple rounded px-1 py-0.5">
-              <Text className="font-mono text-[8px] text-game-purple-light">Lv{upgrade.level}</Text>
+              <Text className="font-mono text-[8px] text-game-purple-light">購入済</Text>
             </View>
           )}
         </View>
@@ -57,47 +58,59 @@ const UpgradeItem: React.FC<{
       {/* コスト */}
       <Text
         className={`font-mono text-[11px] font-bold ${
-          canAfford ? 'text-[#f0c040]' : 'text-[#6666aa]'
+          canAfford && !upgrade.bought ? 'text-[#f0c040]' : 'text-[#6666aa]'
         }`}
       >
-        🪙{formatNumber(currentCost)}
+        {upgrade.bought ? '✓' : `🪙${formatNumber(upgrade.cost)}`}
       </Text>
-    </TouchableOpacity>
+    </Pressable>
   );
-}, (prev, next) => {
-  return (
-    prev.upgrade.id === next.upgrade.id &&
-    prev.upgrade.level === next.upgrade.level &&
-    prev.canAfford === next.canAfford
-  );
-});
+}, (prev, next) => (
+  prev.upgrade.id     === next.upgrade.id &&
+  prev.upgrade.bought === next.upgrade.bought &&
+  prev.canAfford      === next.canAfford
+));
+
+// ─────────────────────────────────────────
+//  FlatListに渡すアイテムデータ型
+// ─────────────────────────────────────────
+
+type UpgradeListItem = {
+  upgrade: Upgrade;
+  canAfford: boolean;
+};
 
 // ─────────────────────────────────────────
 //  メインコンポーネント
 // ─────────────────────────────────────────
 
 export const UpgradeList: React.FC<Props> = React.memo(({ upgrades, gold, onBuy }) => {
-  return (
-    <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-      {upgrades.map((u) => {
-        const currentCost = Math.floor(
-          u.baseCost * Math.pow(GAME_CONFIG.UPGRADE_COST_MULTIPLIER, u.level)
-        );
-        return (
-          <UpgradeItem
-            key={u.id}
-            upgrade={u}
-            canAfford={gold >= currentCost}
-            currentCost={currentCost}
-            onBuy={onBuy}
-          />
-        );
-      })}
-    </ScrollView>
+  const items: UpgradeListItem[] = useMemo(() =>
+    upgrades.map((u) => ({ upgrade: u, canAfford: gold >= u.cost })),
+    [upgrades, gold]
   );
-}, (prev, next) => {
+
+  const renderItem = useCallback(({ item }: { item: UpgradeListItem }) => (
+    <UpgradeItem
+      upgrade={item.upgrade}
+      canAfford={item.canAfford}
+      onBuy={onBuy}
+    />
+  ), [onBuy]);
+
+  const keyExtractor = useCallback((item: UpgradeListItem) => item.upgrade.id, []);
+
   return (
-    prev.upgrades === next.upgrades &&
-    Math.floor(prev.gold / 10) === Math.floor(next.gold / 10)
+    <FlatList
+      className="flex-1"
+      data={items}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      showsVerticalScrollIndicator={false}
+      contentInsetAdjustmentBehavior="automatic"
+    />
   );
-});
+}, (prev, next) => (
+  prev.upgrades === next.upgrades &&
+  Math.floor(prev.gold / 10) === Math.floor(next.gold / 10)
+));
