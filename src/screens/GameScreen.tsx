@@ -8,6 +8,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { BattleField } from '../components/battle/BattleField';
 import { StatusPanel } from '../components/status/StatusPanel';
+import { SkillSelectModal } from '../components/SkillSelectModal';
 import { useGameLoop } from '../state/useGameLoop';
 
 // ─────────────────────────────────────────
@@ -15,7 +16,7 @@ import { useGameLoop } from '../state/useGameLoop';
 // ─────────────────────────────────────────
 
 export const GameScreen: React.FC = () => {
-  const { state, upgrades, damageNumbers, isAttacking, isHit, buyUpgrade } = useGameLoop();
+  const { state, upgrades, damageNumbers, isAttacking, isHit, buyUpgrade, skillChoices, selectSkill } = useGameLoop();
 
   return (
     <View className="flex-1 bg-game-dark">
@@ -34,7 +35,14 @@ export const GameScreen: React.FC = () => {
         onBuy={buyUpgrade}
       />
 
-
+      {/* スキル選択モーダル（レベルアップ時） */}
+      {skillChoices.length > 0 && (
+        <SkillSelectModal
+          choices={skillChoices}
+          acquiredIds={state.acquiredSkills.map((s) => s.defId)}
+          onSelect={selectSkill}
+        />
+      )}
     </View>
   );
 };

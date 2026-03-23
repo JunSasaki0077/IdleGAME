@@ -114,7 +114,7 @@ export function useGameLoop(): GameLoopResult {
 
   // ─── スキル選択 ───
   const selectSkill = useCallback((skillDefId: string) => {
-    setState((prev) => acquireSkill(prev, skillDefId));
+    setState((prev) => acquireSkill(prev, skillDefId, 1 / prev.atkSpeed));
     setSkillChoices([]);
   }, []);
 
@@ -167,31 +167,46 @@ export function useGameLoop(): GameLoopResult {
           })),
         };
 
-        // ── 主人公の攻撃（弾を発射） ──
+        // ── 主人公の攻撃（スキルごとに独立タイマーで発射） ──
         const atkInterval = 1 / s.atkSpeed;
-        if (s.atkTimer >= atkInterval && s.enemies.length > 0) {
-          s = { ...s, atkTimer: 0 };
-          effects.push(() => triggerAttack());
+        const newSkillTimers = { ...s.skillTimers };
+        const newProjs: Projectile[] = [];
+        let didAnyAttack = false;
 
-          const baseDmg = Math.floor(
-            s.atk * (skillFx.atkMultiplier ?? 1) *
-            (GAME_CONFIG.DAMAGE_VARIANCE_MIN + Math.random() * (GAME_CONFIG.DAMAGE_VARIANCE_MAX - GAME_CONFIG.DAMAGE_VARIANCE_MIN))
-          );
+        const skillsToProcess = s.acquiredSkills.length > 0
+          ? s.acquiredSkills
+          : [{ defId: 'fireball', skillLv: 1 }];
 
-          const skillsToFire = s.acquiredSkills.length > 0
-            ? s.acquiredSkills.map((a) => SKILL_TO_PROJECTILE[a.defId] ?? 'fireball')
-            : ['fireball' as Projectile['kind']];
+        for (let i = 0; i < skillsToProcess.length; i++) {
+          const acquired = skillsToProcess[i];
+          const timerId = acquired.defId;
+          const timer = (newSkillTimers[timerId] ?? 0) + dt;
 
-          const uniqueKinds = [...new Set(skillsToFire)];
-          const newProjs = uniqueKinds.map((kind, i) =>
-            createProjectile(
+          if (timer >= atkInterval && s.enemies.length > 0) {
+            newSkillTimers[timerId] = 0;
+            didAnyAttack = true;
+
+            const baseDmg = Math.floor(
+              s.atk * (skillFx.atkMultiplier ?? 1) *
+              (GAME_CONFIG.DAMAGE_VARIANCE_MIN + Math.random() * (GAME_CONFIG.DAMAGE_VARIANCE_MAX - GAME_CONFIG.DAMAGE_VARIANCE_MIN))
+            );
+            const kind = SKILL_TO_PROJECTILE[acquired.defId] ?? 'fireball';
+            newProjs.push(createProjectile(
               kind,
               GAME_CONFIG.HERO_POSITION_X + 5,
               GAME_CONFIG.PROJ_Y + i * 6,
               baseDmg,
-            )
-          );
-          s = { ...s, projectiles: [...s.projectiles, ...newProjs] };
+            ));
+          } else {
+            newSkillTimers[timerId] = timer;
+          }
+        }
+
+        if (didAnyAttack) {
+          effects.push(() => triggerAttack());
+          s = { ...s, skillTimers: newSkillTimers, projectiles: [...s.projectiles, ...newProjs] };
+        } else {
+          s = { ...s, skillTimers: newSkillTimers };
         }
 
         // ── 弾を移動 ──

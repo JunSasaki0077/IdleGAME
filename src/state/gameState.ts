@@ -40,6 +40,7 @@ export type GameState = {
   spawnTimer: number;
   atkTimer: number;
   enemyAtkTimer: number;
+  skillTimers: Record<string, number>; // スキルごとの独立した攻撃タイマー
 };
 
 // ─────────────────────────────────────────
@@ -66,6 +67,7 @@ export const INITIAL_STATE: GameState = {
   spawnTimer: 0,
   atkTimer: 0,
   enemyAtkTimer: 0,
+  skillTimers: {},
 };
 
 // ─────────────────────────────────────────
@@ -138,9 +140,10 @@ export function calcSkillEffects(acquiredSkills: AcquiredSkill[]): SkillEffect {
   };
 }
 
-export function acquireSkill(state: GameState, skillDefId: string): GameState {
+export function acquireSkill(state: GameState, skillDefId: string, atkInterval = 0.83): GameState {
   const existing = state.acquiredSkills.find((s) => s.defId === skillDefId);
   if (existing) {
+    // レベルアップの場合はタイマーそのまま
     return {
       ...state,
       pendingSkillChoice: false,
@@ -149,10 +152,14 @@ export function acquireSkill(state: GameState, skillDefId: string): GameState {
       ),
     };
   }
+  // 新規習得：既存スキル数に応じてタイマーをオフセット（重ならないよう等間隔にずらす）
+  const count = state.acquiredSkills.length + 1; // 習得後の総スキル数
+  const offset = atkInterval * ((count - 1) / count);
   return {
     ...state,
     pendingSkillChoice: false,
     acquiredSkills: [...state.acquiredSkills, { defId: skillDefId, skillLv: 1 }],
+    skillTimers: { ...state.skillTimers, [skillDefId]: offset },
   };
 }
 

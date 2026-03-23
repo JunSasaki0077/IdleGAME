@@ -1,21 +1,20 @@
 // ============================================================
 //  components/status/StatusPanel.tsx
 //  下部ステータスパネル全体
-//  ResourceBar・GoldDisplay・UpgradeList をまとめる
+//  アップグレード / スキル タブ切り替え対応
 // ============================================================
 
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable } from 'react-native';
 import { ResourceBar } from './ResourceBar';
 import { GoldDisplay } from './GoldDisplay';
 import { UpgradeList } from './UpgradeList';
+import { AcquiredSkillList } from './AcquiredSkillList';
 import { getCurrentClass } from '../../state/gameState';
 import type { GameState } from '../../state/gameState';
 import type { Upgrade } from '../../types/gameTypes';
 
-// ─────────────────────────────────────────
-//  Props
-// ─────────────────────────────────────────
+type Tab = 'upgrade' | 'skill';
 
 type Props = {
   state: GameState;
@@ -23,11 +22,8 @@ type Props = {
   onBuy: (id: string) => void;
 };
 
-// ─────────────────────────────────────────
-//  コンポーネント
-// ─────────────────────────────────────────
-
 export const StatusPanel: React.FC<Props> = ({ state, upgrades, onBuy }) => {
+  const [tab, setTab] = useState<Tab>('upgrade');
   const currentClass = getCurrentClass(state.level);
 
   return (
@@ -55,28 +51,46 @@ export const StatusPanel: React.FC<Props> = ({ state, upgrades, onBuy }) => {
 
       {/* ── 中段：HP・XPバー ── */}
       <View className="gap-1">
-        <ResourceBar
-          icon="❤️"
-          current={state.hp}
-          max={state.maxHp}
-          color="#e74c3c"
-        />
-        <ResourceBar
-          icon="⭐"
-          current={state.xp}
-          max={state.maxXp}
-          color="#2ecc71"
-        />
+        <ResourceBar icon="❤️" current={state.hp}  max={state.maxHp} color="#e74c3c" />
+        <ResourceBar icon="⭐" current={state.xp}  max={state.maxXp} color="#2ecc71" />
       </View>
 
-      {/* ── 下段：アップグレード ── */}
-      <UpgradeList
-        upgrades={upgrades}
-        gold={state.gold}
-        onBuy={onBuy}
-      />
+      {/* ── タブ切り替え ── */}
+      <View className="flex-row gap-1">
+        <Pressable
+          className={`flex-1 items-center py-1.5 rounded-lg border ${
+            tab === 'upgrade'
+              ? 'bg-game-purple-dark border-game-purple'
+              : 'bg-transparent border-[#2a2a4a]'
+          }`}
+          onPress={() => setTab('upgrade')}
+        >
+          <Text className={`text-xs font-bold ${tab === 'upgrade' ? 'text-game-purple-light' : 'text-[#6666aa]'}`}>
+            ⚔️ アップグレード
+          </Text>
+        </Pressable>
+
+        <Pressable
+          className={`flex-1 items-center py-1.5 rounded-lg border ${
+            tab === 'skill'
+              ? 'bg-game-purple-dark border-game-purple'
+              : 'bg-transparent border-[#2a2a4a]'
+          }`}
+          onPress={() => setTab('skill')}
+        >
+          <Text className={`text-xs font-bold ${tab === 'skill' ? 'text-game-purple-light' : 'text-[#6666aa]'}`}>
+            ✨ スキル {state.acquiredSkills.length > 0 ? `(${state.acquiredSkills.length})` : ''}
+          </Text>
+        </Pressable>
+      </View>
+
+      {/* ── 下段：タブコンテンツ ── */}
+      {tab === 'upgrade' ? (
+        <UpgradeList upgrades={upgrades} gold={state.gold} onBuy={onBuy} />
+      ) : (
+        <AcquiredSkillList acquiredSkills={state.acquiredSkills} />
+      )}
 
     </View>
   );
 };
-
