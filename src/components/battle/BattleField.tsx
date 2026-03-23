@@ -1,16 +1,20 @@
 // ============================================================
 //  components/battle/BattleField.tsx
-//  弾（ProjectileSprite）を追加
+//  Hero に HeroAnim を渡してアニメーションを切り替える
 // ============================================================
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Hero } from './Hero';
+import { Hero, type HeroAnim } from './Hero';
 import { EnemySprite } from './EnemySprite';
 import { ProjectileSprite } from './ProjectileSprite';
 import { getCurrentClass } from '../../state/gameState';
 import type { GameState } from '../../state/gameState';
 import type { DamageNumber } from '../../types/gameTypes';
+
+// ─────────────────────────────────────────
+//  Props
+// ─────────────────────────────────────────
 
 type Props = {
   state: GameState;
@@ -19,13 +23,22 @@ type Props = {
   isHit: boolean;
 };
 
+// ─────────────────────────────────────────
+//  コンポーネント
+// ─────────────────────────────────────────
+
 export const BattleField: React.FC<Props> = ({
   state,
   damageNumbers,
   isAttacking,
   isHit,
 }) => {
-  const currentClass = getCurrentClass(state.level);
+  // isAttacking・isHit の状態をアニメーション名に変換
+  const heroAnim: HeroAnim =
+    isHit      ? 'damage' :
+    isAttacking ? 'attack' :
+    state.enemies.length > 0 ? 'walk' :
+    'idle';
 
   return (
     <View style={styles.field}>
@@ -36,15 +49,15 @@ export const BattleField: React.FC<Props> = ({
       {/* 地面 */}
       <View style={styles.ground} />
 
-      {/* 主人公 */}
-      <Hero emoji={currentClass.emoji} isAttacking={isAttacking} isHit={isHit} />
+      {/* 主人公（PNG ドット絵） */}
+      <Hero anim={heroAnim} size={72} />
 
       {/* 敵一覧 */}
       {state.enemies.map((enemy) => (
         <EnemySprite key={enemy.id} enemy={enemy} />
       ))}
 
-      {/* 弾一覧（新規追加） */}
+      {/* 弾一覧 */}
       {state.projectiles.map((proj) => (
         <ProjectileSprite key={proj.id} projectile={proj} />
       ))}
@@ -55,11 +68,7 @@ export const BattleField: React.FC<Props> = ({
           key={d.id}
           style={[
             styles.damageNum,
-            {
-              left:  `${d.x}%`,
-              top:   `${d.y}%`,
-              color: d.color,
-            },
+            { left: `${d.x}%`, top: `${d.y}%`, color: d.color },
           ]}
         >
           {d.value}
@@ -74,6 +83,10 @@ export const BattleField: React.FC<Props> = ({
     </View>
   );
 };
+
+// ─────────────────────────────────────────
+//  スタイル
+// ─────────────────────────────────────────
 
 const styles = StyleSheet.create({
   field: {
