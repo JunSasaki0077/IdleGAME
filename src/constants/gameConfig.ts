@@ -9,8 +9,9 @@ export const GAME_CONFIG = {
   MAX_DELTA_TIME: 0.2,            // 最大デルタタイム（秒）
 
   // 位置設定
-  HERO_POSITION_X: 20,            // 主人公のX座標（%）
-  ENEMY_STOP_OFFSET: 8,           // 敵が止まる位置のオフセット（主人公のすぐ右で止まる）
+  HERO_POSITION_X: 22,            // 主人公のX座標（%）
+  ENEMY_STOP_OFFSET: 12,          // 敵が止まる位置のオフセット（主人公のすぐ右で止まる）
+  PROJ_Y: 30,                     // 弾のY座標（%・地面より少し上）
   ENEMY_MIN_X: 20,                // 敵が通り越せない最小X座標（主人公の位置）
   ENEMY_DESPAWN_X: -20,           // 敵が削除されるX座標
   ENEMY_SPAWN_X: 110,             // 敵が出現するX座標
@@ -20,7 +21,8 @@ export const GAME_CONFIG = {
   DAMAGE_VARIANCE_MIN: 0.85,      // ダメージの最小倍率
   DAMAGE_VARIANCE_MAX: 1.15,      // ダメージの最大倍率
   ENEMY_ATTACK_INTERVAL: 1.0,     // 敵の攻撃間隔（秒）
-  ENEMY_DAMAGE_MULTIPLIER: 1/7,   // 敵のダメージ計算倍率
+  ENEMY_DAMAGE_DIVISOR: 15,       // 敵ダメージ計算の除数（baseHp ÷ この値）
+  ENEMY_DAMAGE_MULTIPLIER: 1/7,   // 敵のダメージ計算倍率（旧式・互換用）
   ENEMY_DAMAGE_VARIANCE_MIN: 0.8, // 敵のダメージ最小倍率
   ENEMY_DAMAGE_VARIANCE_MAX: 1.2, // 敵のダメージ最大倍率
   ATTACK_RANGE: 5,                // 攻撃可能範囲

@@ -4,6 +4,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { GAME_CONFIG } from '../constants/gameConfig';
 import { UPGRADES } from '../constants/gameData';
 import { generateSkillChoices } from '../constants/skillData';
 import {
@@ -19,17 +20,14 @@ import {
 import type { Upgrade, DamageNumber, Projectile } from '../types/gameTypes';
 import type { SkillDef } from '../types/skillTypes';
 
-const TICK_MS  = 50;
-const HERO_X   = 22;   // 主人公のX座標（%）
-const STOP_X   = HERO_X + 12;
-const PROJ_Y   = 30;   // 弾のY座標（%・地面より少し上）
-
 // スキルIDと弾の種類を対応させる
 const SKILL_TO_PROJECTILE: Record<string, Projectile['kind']> = {
   fireball: 'fireball',
   thunder:  'thunder',
   ice:      'ice',
 };
+
+const STOP_X = GAME_CONFIG.HERO_POSITION_X + GAME_CONFIG.ENEMY_STOP_OFFSET;
 
 // ─────────────────────────────────────────
 //  戻り値の型
@@ -62,10 +60,19 @@ export function useGameLoop(): GameLoopResult {
   const stateRef     = useRef<GameState>(INITIAL_STATE);
   const dmgIdCounter = useRef(0);
   const prevLevelRef = useRef(1);
+  const timerRefs    = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   useEffect(() => { stateRef.current = state; }, [state]);
 
-  // レベルアップを検知してスキル選択肢を生成
+  // ─── タイマークリーンアップ ───
+  useEffect(() => {
+    return () => {
+      timerRefs.current.forEach((t) => clearTimeout(t));
+      timerRefs.current.clear();
+    };
+  }, []);
+
+  // ─── レベルアップを検知してスキル選択肢を生成 ───
   useEffect(() => {
     if (state.level > prevLevelRef.current && state.pendingSkillChoice) {
       const choices = generateSkillChoices(state.acquiredSkills.map((s) => s.defId));
@@ -80,17 +87,29 @@ export function useGameLoop(): GameLoopResult {
   ) => {
     const id = dmgIdCounter.current++;
     setDamageNumbers((prev) => [...prev, { id, value, x, y, color }]);
-    setTimeout(() => setDamageNumbers((prev) => prev.filter((d) => d.id !== id)), 1000);
+    const t = setTimeout(() => {
+      setDamageNumbers((prev) => prev.filter((d) => d.id !== id));
+      timerRefs.current.delete(t);
+    }, GAME_CONFIG.DAMAGE_NUMBER_DURATION);
+    timerRefs.current.add(t);
   }, []);
 
   const triggerAttack = useCallback(() => {
     setIsAttacking(true);
-    setTimeout(() => setIsAttacking(false), 180);
+    const t = setTimeout(() => {
+      setIsAttacking(false);
+      timerRefs.current.delete(t);
+    }, GAME_CONFIG.ATTACK_ANIMATION_DURATION);
+    timerRefs.current.add(t);
   }, []);
 
   const triggerHit = useCallback(() => {
     setIsHit(true);
-    setTimeout(() => setIsHit(false), 250);
+    const t = setTimeout(() => {
+      setIsHit(false);
+      timerRefs.current.delete(t);
+    }, GAME_CONFIG.HIT_ANIMATION_DURATION);
+    timerRefs.current.add(t);
   }, []);
 
   // ─── スキル選択 ───
@@ -114,16 +133,22 @@ export function useGameLoop(): GameLoopResult {
     setUpgrades((prev) => prev.map((u) => u.id === upgradeId ? { ...u, bought: true } : u));
   }, [upgrades]);
 
-  // ─── メインゲームループ ───
+  // ─── メインゲームループ（requestAnimationFrame） ───
   useEffect(() => {
-    let lastTime = Date.now();
+    let raf: number;
+    let lastTime = performance.now();
 
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const dt  = Math.min((now - lastTime) / 1000, 0.2);
-      lastTime  = now;
+    const gameLoop = (currentTime: number) => {
+      const dt = Math.min((currentTime - lastTime) / 1000, GAME_CONFIG.MAX_DELTA_TIME);
+      lastTime = currentTime;
+
+      // setState内で呼べないサイドエフェクトをここに収集する
+      const effects: Array<() => void> = [];
 
       setState((prev) => {
+        // StrictModeの二重呼び出しに対応：毎回リセット
+        effects.length = 0;
+
         let s = tickGame(prev, dt);
         const skillFx = calcSkillEffects(s.acquiredSkills);
 
@@ -133,7 +158,7 @@ export function useGameLoop(): GameLoopResult {
         }
 
         // ── 敵を移動（スロウ反映） ──
-        const moveSpeed = 15 * (1 - (skillFx.slowAmount ?? 0));
+        const moveSpeed = GAME_CONFIG.ENEMY_MOVE_SPEED * (1 - (skillFx.slowAmount ?? 0));
         s = {
           ...s,
           enemies: s.enemies.map((e) => ({
@@ -146,77 +171,63 @@ export function useGameLoop(): GameLoopResult {
         const atkInterval = 1 / s.atkSpeed;
         if (s.atkTimer >= atkInterval && s.enemies.length > 0) {
           s = { ...s, atkTimer: 0 };
-          triggerAttack();
+          effects.push(() => triggerAttack());
 
           const baseDmg = Math.floor(
-            s.atk * (skillFx.atkMultiplier ?? 1) * (0.85 + Math.random() * 0.3)
+            s.atk * (skillFx.atkMultiplier ?? 1) *
+            (GAME_CONFIG.DAMAGE_VARIANCE_MIN + Math.random() * (GAME_CONFIG.DAMAGE_VARIANCE_MAX - GAME_CONFIG.DAMAGE_VARIANCE_MIN))
           );
 
-          // 習得済みスキルに応じて弾を発射
-          // スキルがない場合はデフォルト弾（fireball）を発射
           const skillsToFire = s.acquiredSkills.length > 0
             ? s.acquiredSkills.map((a) => SKILL_TO_PROJECTILE[a.defId] ?? 'fireball')
             : ['fireball' as Projectile['kind']];
 
-          // 重複を除いた弾の種類だけ発射
           const uniqueKinds = [...new Set(skillsToFire)];
-          const newProjectiles = uniqueKinds.map((kind, i) =>
+          const newProjs = uniqueKinds.map((kind, i) =>
             createProjectile(
               kind,
-              HERO_X + 5,       // 主人公のすぐ右から発射
-              PROJ_Y + i * 6,   // 複数の弾は少しずらす
+              GAME_CONFIG.HERO_POSITION_X + 5,
+              GAME_CONFIG.PROJ_Y + i * 6,
               baseDmg,
             )
           );
-
-          s = { ...s, projectiles: [...s.projectiles, ...newProjectiles] };
+          s = { ...s, projectiles: [...s.projectiles, ...newProjs] };
         }
 
         // ── 弾を移動 ──
         s = {
           ...s,
-          projectiles: s.projectiles.map((p) => ({
-            ...p,
-            x: p.x + p.speed * dt,
-          })),
+          projectiles: s.projectiles.map((p) => ({ ...p, x: p.x + p.speed * dt })),
         };
 
-        // ── 弾の当たり判定（先頭の敵に当たる） ──
-        let newProjectiles = [...s.projectiles];
-        let newEnemies     = [...s.enemies];
-        let goldGain = 0;
-        let xpGain   = 0;
+        // ── 弾の当たり判定 ──
+        let projectiles = [...s.projectiles];
+        let enemies     = [...s.enemies];
+        let goldGain    = 0;
+        let xpGain      = 0;
 
-        for (const proj of newProjectiles) {
+        for (const proj of projectiles) {
           if (proj.hit) continue;
 
-          // 先頭の敵（一番左にいる敵）を取得
-          const target = [...newEnemies]
-            .sort((a, b) => a.x - b.x)[0];
+          // 毎フレームソートせず、reduce で最左敵を O(n) で取得
+          const target = enemies.length > 0
+            ? enemies.reduce((a, b) => a.x < b.x ? a : b)
+            : null;
 
-          if (!target) continue;
+          if (!target || proj.x < target.x - GAME_CONFIG.ATTACK_RANGE) continue;
 
-          // 弾が敵のX座標に到達したか
-          if (proj.x >= target.x - 5) {
-            // ヒット！
-            newProjectiles = newProjectiles.map((p) =>
-              p.id === proj.id ? { ...p, hit: true } : p
-            );
+          projectiles = projectiles.map((p) => p.id === proj.id ? { ...p, hit: true } : p);
+          const newHp = target.hp - proj.damage;
 
-            const newHp = target.hp - proj.damage;
-            spawnDamageNumber(`-${proj.damage}`, target.x, 20, '#ff6666');
+          effects.push(() => spawnDamageNumber(`-${proj.damage}`, target.x, 20, '#ff6666'));
 
-            if (newHp <= 0) {
-              // 敵を倒した
-              spawnDamageNumber(`+${target.reward.gold}G`, target.x, 10, '#f0c040');
-              goldGain += target.reward.gold;
-              xpGain   += target.reward.xp;
-              newEnemies = newEnemies.filter((e) => e.id !== target.id);
-            } else {
-              newEnemies = newEnemies.map((e) =>
-                e.id === target.id ? { ...e, hp: newHp } : e
-              );
-            }
+          if (newHp <= 0) {
+            effects.push(() => spawnDamageNumber(`+${target.reward.gold}G`, target.x, 10, '#f0c040'));
+            goldGain += target.reward.gold;
+            xpGain   += target.reward.xp;
+            enemies   = enemies.filter((e) => e.id !== target.id);
+          } else {
+            enemies = enemies.map((e) => e.id === target.id ? { ...e, hp: newHp } : e);
           }
         }
 
@@ -224,40 +235,49 @@ export function useGameLoop(): GameLoopResult {
           ...s,
           gold:        s.gold + goldGain,
           xp:          s.xp   + xpGain,
-          enemies:     newEnemies,
-          // ヒット済み・画面外の弾を削除
-          projectiles: newProjectiles.filter((p) => !p.hit && p.x < 115),
+          enemies,
+          projectiles: projectiles.filter((p) => !p.hit && p.x < 115),
         };
 
         // ── 敵の攻撃 ──
-        const attackingEnemies = s.enemies.filter((e) => e.x <= STOP_X + 5);
+        const attackingEnemies = s.enemies.filter((e) => e.x <= STOP_X + GAME_CONFIG.ATTACK_RANGE);
         if (attackingEnemies.length > 0) {
           s = { ...s, enemyAtkTimer: (s.enemyAtkTimer ?? 0) + dt };
-          if (s.enemyAtkTimer >= 1.0) {
+          if (s.enemyAtkTimer >= GAME_CONFIG.ENEMY_ATTACK_INTERVAL) {
             s = { ...s, enemyAtkTimer: 0 };
             let totalDmg = 0;
             attackingEnemies.forEach((e) => {
-              totalDmg += Math.floor((e.def.baseHp / 15) * (0.8 + Math.random() * 0.4));
+              totalDmg += Math.floor(
+                (e.def.baseHp / GAME_CONFIG.ENEMY_DAMAGE_DIVISOR) *
+                (GAME_CONFIG.ENEMY_DAMAGE_VARIANCE_MIN + Math.random() *
+                  (GAME_CONFIG.ENEMY_DAMAGE_VARIANCE_MAX - GAME_CONFIG.ENEMY_DAMAGE_VARIANCE_MIN))
+              );
             });
             const newHp = Math.max(0, s.hp - totalDmg);
-            spawnDamageNumber(`-${totalDmg}`, HERO_X, 25, '#ff4444');
-            triggerHit();
+            effects.push(() => spawnDamageNumber(`-${totalDmg}`, GAME_CONFIG.HERO_POSITION_X, 25, '#ff4444'));
+            effects.push(() => triggerHit());
             s = { ...s, hp: newHp };
             if (newHp <= 0) {
               s = { ...s, hp: s.maxHp, enemies: [], projectiles: [] };
-              spawnDamageNumber('💀 REVIVE!', HERO_X, 15, '#c084fc');
+              effects.push(() => spawnDamageNumber('💀 REVIVE!', GAME_CONFIG.HERO_POSITION_X, 15, '#c084fc'));
             }
           }
         } else {
           s = { ...s, enemyAtkTimer: 0 };
         }
 
-        s = { ...s, enemies: s.enemies.filter((e) => e.x > -20) };
+        s = { ...s, enemies: s.enemies.filter((e) => e.x > GAME_CONFIG.ENEMY_DESPAWN_X) };
         return s;
       });
-    }, TICK_MS);
 
-    return () => clearInterval(interval);
+      // サイドエフェクトをsetState完了後に適用
+      effects.forEach((fn) => fn());
+
+      raf = requestAnimationFrame(gameLoop);
+    };
+
+    raf = requestAnimationFrame(gameLoop);
+    return () => cancelAnimationFrame(raf);
   }, [spawnDamageNumber, triggerAttack, triggerHit]);
 
   return { state, upgrades, damageNumbers, isAttacking, isHit, skillChoices, buyUpgrade, selectSkill, upgradeSkill };
