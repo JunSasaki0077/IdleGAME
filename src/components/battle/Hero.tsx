@@ -1,59 +1,112 @@
 // ============================================================
 //  components/battle/Hero.tsx
-//  主人公キャラクターの表示
-//  - 攻撃エフェクト（スケールアップ + 剣閃）
-//  - ダメージエフェクト（赤フラッシュ）
+//  PNG画像を使ったドット絵アニメーション
+//  フレームを一定間隔で切り替えて動かす
 // ============================================================
 
-import React from 'react';
-import { View, Text } from 'react-native';
-import { GAME_CONFIG } from '../../constants/gameConfig';
+import React, { useEffect, useState } from 'react';
+import { Image, StyleSheet, View } from 'react-native';
 
-type Props = {
-  emoji: string;
-  isAttacking: boolean;
-  isHit: boolean;
+// ─────────────────────────────────────────
+//  アニメーションの種類
+// ─────────────────────────────────────────
+
+export type HeroAnim = 'idle' | 'walk' | 'attack' | 'damage';
+
+// ─────────────────────────────────────────
+//  画像の読み込み
+//  requireはビルド時に解決されるので
+//  動的なパスが使えないため全部列挙する
+// ─────────────────────────────────────────
+
+const FRAMES: Record<HeroAnim, ReturnType<typeof require>[]> = {
+  idle: [
+    require('../../../assets/sprites/mage_idle_1.png'),
+    require('../../../assets/sprites/mage_idle_2.png'),
+    require('../../../assets/sprites/mage_idle_3.png'),
+    require('../../../assets/sprites/mage_idle_4.png'),
+  ],
+  walk: [
+    require('../../../assets/sprites/mage_walk_1.png'),
+    require('../../../assets/sprites/mage_walk_2.png'),
+    require('../../../assets/sprites/mage_walk_3.png'),
+    require('../../../assets/sprites/mage_walk_4.png'),
+  ],
+  attack: [
+    require('../../../assets/sprites/mage_attack_1.png'),
+    require('../../../assets/sprites/mage_attack_2.png'),
+    require('../../../assets/sprites/mage_attack_3.png'),
+    require('../../../assets/sprites/mage_attack_4.png'),
+  ],
+  damage: [
+    require('../../../assets/sprites/mage_damage_1.png'),
+    require('../../../assets/sprites/mage_damage_2.png'),
+    require('../../../assets/sprites/mage_damage_3.png'),
+    require('../../../assets/sprites/mage_damage_4.png'),
+  ],
 };
 
-export const Hero: React.FC<Props> = React.memo(({ emoji, isAttacking, isHit }) => {
+// アニメーションごとのフレーム切り替え速度（ms）
+const ANIM_SPEED: Record<HeroAnim, number> = {
+  idle:   600,
+  walk:   150,
+  attack: 110,
+  damage: 100,
+};
+
+// ─────────────────────────────────────────
+//  Props
+// ─────────────────────────────────────────
+
+type Props = {
+  anim: HeroAnim;   // 再生するアニメーション
+  size?: number;    // 表示サイズ（デフォルト: 72px）
+};
+
+// ─────────────────────────────────────────
+//  コンポーネント
+// ─────────────────────────────────────────
+
+export const Hero: React.FC<Props> = ({ anim, size = 72 }) => {
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  // アニメーションが切り替わったらフレームをリセット
+  useEffect(() => {
+    setFrameIndex(0);
+  }, [anim]);
+
+  // フレームを一定間隔で進める
+  useEffect(() => {
+    const frames = FRAMES[anim];
+    const speed  = ANIM_SPEED[anim];
+
+    const timer = setInterval(() => {
+      setFrameIndex((prev) => (prev + 1) % frames.length);
+    }, speed);
+
+    return () => clearInterval(timer);
+  }, [anim]);
+
   return (
-    <View
-      className="absolute bottom-[45%] items-center z-10"
-      style={{ left: `${GAME_CONFIG.HERO_POSITION_X}%` }}
-    >
-      {/* ダメージ受けオーバーレイ */}
-      {isHit && (
-        <View
-          className="absolute w-[50px] h-[50px] rounded-full z-[11]"
-          style={{ backgroundColor: 'rgba(255, 50, 50, 0.45)' }}
-        />
-      )}
-
-      {/* 主人公スプライト */}
-      <Text
-        className="text-4xl"
-        style={{
-          transform: [
-            ...(isAttacking ? [{ scale: 1.25 }, { translateX: 6 }] : []),
-            ...(isHit ? [{ translateX: -4 }] : []),
-          ],
-          opacity: isHit ? 0.5 : 1,
-        }}
-      >
-        {emoji}
-      </Text>
-
-      {/* 攻撃エフェクト（剣閃） */}
-      {isAttacking && (
-        <Text className="absolute -right-6 top-1 text-2xl">⚡</Text>
-      )}
-
+    <View style={styles.container}>
+      <Image
+        source={FRAMES[anim][frameIndex]}
+        style={{ width: size, height: size }}
+        resizeMode="contain"
+      />
     </View>
   );
-}, (prev, next) => {
-  return (
-    prev.emoji === next.emoji &&
-    prev.isAttacking === next.isAttacking &&
-    prev.isHit === next.isHit
-  );
+};
+
+// ─────────────────────────────────────────
+//  スタイル
+// ─────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    bottom: '45%',
+    left: '18%',
+    zIndex: 10,
+  },
 });
