@@ -5,7 +5,6 @@
 
 export const GAME_CONFIG = {
   // ゲームループ設定
-  TICK_MS: 50,                    // ゲームループの更新間隔（ミリ秒）
   MAX_DELTA_TIME: 0.2,            // 最大デルタタイム（秒）
 
   // 位置設定
@@ -22,7 +21,6 @@ export const GAME_CONFIG = {
   DAMAGE_VARIANCE_MAX: 1.15,      // ダメージの最大倍率
   ENEMY_ATTACK_INTERVAL: 1.0,     // 敵の攻撃間隔（秒）
   ENEMY_DAMAGE_DIVISOR: 15,       // 敵ダメージ計算の除数（baseHp ÷ この値）
-  ENEMY_DAMAGE_MULTIPLIER: 1/7,   // 敵のダメージ計算倍率（旧式・互換用）
   ENEMY_DAMAGE_VARIANCE_MIN: 0.8, // 敵のダメージ最小倍率
   ENEMY_DAMAGE_VARIANCE_MAX: 1.2, // 敵のダメージ最大倍率
   ATTACK_RANGE: 5,                // 攻撃可能範囲

@@ -8,7 +8,6 @@ import { View, Text } from 'react-native';
 import { Hero, type HeroAnim } from './Hero';
 import { EnemySprite } from './EnemySprite';
 import { ProjectileSprite } from './ProjectileSprite';
-import { getCurrentClass } from '../../state/gameState';
 import { GAME_CONFIG } from '../../constants/gameConfig';
 import type { GameState } from '../../state/gameState';
 import type { DamageNumber } from '../../types/gameTypes';

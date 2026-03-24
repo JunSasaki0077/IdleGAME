@@ -38,7 +38,6 @@ export type GameState = {
 
   // タイマー
   spawnTimer: number;
-  atkTimer: number;
   enemyAtkTimer: number;
   skillTimers: Record<string, number>; // スキルごとの独立した攻撃タイマー
 };
@@ -65,7 +64,6 @@ export const INITIAL_STATE: GameState = {
   spawnInterval: 3.5,
   projectiles: [],
   spawnTimer: 0,
-  atkTimer: 0,
   enemyAtkTimer: 0,
   skillTimers: {},
 };
@@ -201,7 +199,6 @@ export function tickGame(state: GameState, dt: number): GameState {
   s.gold       += s.goldPerSec * dt;
   s.xp         += s.xpPerSec   * dt;
   s.spawnTimer += dt;
-  s.atkTimer   += dt;
   s = applyLevelUp(s);
   return s;
 }

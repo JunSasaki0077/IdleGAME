@@ -5,7 +5,7 @@
 // ============================================================
 
 import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, View } from 'react-native';
 
 // ─────────────────────────────────────────
 //  アニメーションの種類
@@ -88,7 +88,7 @@ export const Hero: React.FC<Props> = ({ anim, size = 72 }) => {
   }, [anim]);
 
   return (
-    <View style={styles.container}>
+    <View className="absolute bottom-[10%] left-[10%] z-[10]">
       <Image
         source={FRAMES[anim][frameIndex]}
         style={{ width: size, height: size }}
@@ -97,16 +97,3 @@ export const Hero: React.FC<Props> = ({ anim, size = 72 }) => {
     </View>
   );
 };
-
-// ─────────────────────────────────────────
-//  スタイル
-// ─────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: '10%',
-    left: '10%',
-    zIndex: 10,
-  },
-});

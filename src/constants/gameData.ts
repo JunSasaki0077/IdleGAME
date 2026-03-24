@@ -24,17 +24,17 @@ export const CHARACTER_CLASSES: CharacterClass[] = [
 export const ENEMY_DEFS: EnemyDef[] = [
   // Tier 1 - 初級
   { name: 'スライム',   emoji: '🟢', baseHp: 60,   reward: { gold: 5,   xp: 8   }, size: 32, sprite: 'slime'    },
-  { name: 'コウモリ',   emoji: '🦇', baseHp: 50,   reward: { gold: 4,   xp: 7   }, size: 30, sprite: 'kobold'   },
+  { name: 'コウモリ',   emoji: '🦇', baseHp: 50,   reward: { gold: 4,   xp: 7   }, size: 30, sprite: 'kobold'   }, // TODO: bat スプライト追加予定
 
   // Tier 2 - 中級
   { name: 'ゴブリン',   emoji: '👺', baseHp: 120,  reward: { gold: 12,  xp: 18  }, size: 36, sprite: 'goblin'   },
-  { name: 'オオカミ',   emoji: '🐺', baseHp: 140,  reward: { gold: 15,  xp: 22  }, size: 38, sprite: 'kobold'   },
+  { name: 'オオカミ',   emoji: '🐺', baseHp: 140,  reward: { gold: 15,  xp: 22  }, size: 38, sprite: 'kobold'   }, // TODO: wolf スプライト追加予定
   { name: 'ゾンビ',     emoji: '🧟', baseHp: 160,  reward: { gold: 18,  xp: 25  }, size: 40, sprite: 'skeleton' },
 
   // Tier 3 - 上級
   { name: 'オーク',     emoji: '👹', baseHp: 360,  reward: { gold: 35,  xp: 50  }, size: 42, sprite: 'orc'      },
   { name: 'スケルトン', emoji: '💀', baseHp: 400,  reward: { gold: 40,  xp: 60  }, size: 40, sprite: 'skeleton' },
-  { name: 'デーモン',   emoji: '😈', baseHp: 500,  reward: { gold: 50,  xp: 75  }, size: 44, sprite: 'dragon'   },
+  { name: 'デーモン',   emoji: '😈', baseHp: 500,  reward: { gold: 50,  xp: 75  }, size: 44, sprite: 'dragon'   }, // TODO: demon スプライト追加予定
 
   // Tier 4 - 最上級
   { name: 'ドラゴン',   emoji: '🐉', baseHp: 1000, reward: { gold: 120, xp: 180 }, size: 52, sprite: 'dragon'   },

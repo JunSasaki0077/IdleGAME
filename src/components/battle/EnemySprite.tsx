@@ -69,7 +69,8 @@ type Props = {
 
 export const EnemySprite: React.FC<Props> = React.memo(({ enemy }) => {
   const [frameIndex, setFrameIndex] = useState(0);
-  const frames = enemy.def.sprite ? ENEMY_FRAMES[enemy.def.sprite] : null;
+  const spriteKey = enemy.def.sprite ?? null;
+  const frames = spriteKey ? ENEMY_FRAMES[spriteKey] : null;
 
   useEffect(() => {
     if (!frames) return;
@@ -77,7 +78,7 @@ export const EnemySprite: React.FC<Props> = React.memo(({ enemy }) => {
       setFrameIndex((prev) => (prev + 1) % frames.length);
     }, ANIM_SPEED);
     return () => clearInterval(timer);
-  }, [frames]);
+  }, [spriteKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hpRatio = clampRatio(enemy.hp, enemy.maxHp);
   const sizeMultiplier = enemy.isBoss ? GAME_CONFIG.BOSS_SIZE_MULTIPLIER : 1;
