@@ -29,6 +29,7 @@ export type EnemyDef = {
     xp: number;
   };
   size: number;
+  sprite?: string; // assets/sprites/enemies/ 以下のキー名
 };
 
 export type Enemy = {

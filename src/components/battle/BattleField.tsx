@@ -36,11 +36,16 @@ export const BattleField: React.FC<Props> = React.memo(({
 }) => {
   const stage = Math.min(Math.floor(state.level / GAME_CONFIG.STAGE_LEVEL_DIVISOR) + 1, GAME_CONFIG.MAX_STAGE);
 
-  // isAttacking・isHit の状態をアニメーション名に変換
+  // スキルなし時：敵がメレー圏内にいる間はずっと attack アニメーション
+  const STOP_X = GAME_CONFIG.HERO_POSITION_X + GAME_CONFIG.ENEMY_STOP_OFFSET;
+  const isInMeleeRange =
+    state.acquiredSkills.length === 0 &&
+    state.enemies.some((e) => e.x <= STOP_X + GAME_CONFIG.ATTACK_RANGE);
+
   const heroAnim: HeroAnim =
-    isHit        ? 'damage' :
-    isAttacking  ? 'attack' :
-    state.enemies.length > 0 ? 'walk' :
+    isHit                       ? 'damage' :
+    isInMeleeRange || isAttacking ? 'attack' :
+    state.enemies.length > 0    ? 'walk' :
     'idle';
 
   return (
@@ -53,7 +58,7 @@ export const BattleField: React.FC<Props> = React.memo(({
       <View className="absolute bottom-0 left-0 right-0 h-[45%] bg-[#1e3510] border-t-[3px] border-[#4a7a2e]" />
 
       {/* 主人公（PNG ドット絵） */}
-      <Hero anim={heroAnim} size={72} />
+      <Hero anim={heroAnim} size={160} />
 
       {/* 敵一覧 */}
       {state.enemies.map((enemy) => (

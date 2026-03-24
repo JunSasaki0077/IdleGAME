@@ -105,8 +105,8 @@ export const Hero: React.FC<Props> = ({ anim, size = 72 }) => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: '45%',
-    left: '18%',
+    bottom: '10%',
+    left: '10%',
     zIndex: 10,
   },
 });

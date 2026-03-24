@@ -23,24 +23,24 @@ export const CHARACTER_CLASSES: CharacterClass[] = [
 
 export const ENEMY_DEFS: EnemyDef[] = [
   // Tier 1 - 初級
-  { name: 'スライム',   emoji: '🟢', baseHp: 30,  reward: { gold: 5,   xp: 8   }, size: 32 },
-  { name: 'コウモリ',   emoji: '🦇', baseHp: 25,  reward: { gold: 4,   xp: 7   }, size: 30 },
+  { name: 'スライム',   emoji: '🟢', baseHp: 60,   reward: { gold: 5,   xp: 8   }, size: 32, sprite: 'slime'    },
+  { name: 'コウモリ',   emoji: '🦇', baseHp: 50,   reward: { gold: 4,   xp: 7   }, size: 30, sprite: 'kobold'   },
 
   // Tier 2 - 中級
-  { name: 'ゴブリン',   emoji: '👺', baseHp: 60,  reward: { gold: 12,  xp: 18  }, size: 36 },
-  { name: 'オオカミ',   emoji: '🐺', baseHp: 70,  reward: { gold: 15,  xp: 22  }, size: 38 },
-  { name: 'ゾンビ',     emoji: '🧟', baseHp: 80,  reward: { gold: 18,  xp: 25  }, size: 40 },
+  { name: 'ゴブリン',   emoji: '👺', baseHp: 120,  reward: { gold: 12,  xp: 18  }, size: 36, sprite: 'goblin'   },
+  { name: 'オオカミ',   emoji: '🐺', baseHp: 140,  reward: { gold: 15,  xp: 22  }, size: 38, sprite: 'kobold'   },
+  { name: 'ゾンビ',     emoji: '🧟', baseHp: 160,  reward: { gold: 18,  xp: 25  }, size: 40, sprite: 'skeleton' },
 
   // Tier 3 - 上級
-  { name: 'オーク',     emoji: '👹', baseHp: 180, reward: { gold: 35,  xp: 50  }, size: 42 },
-  { name: 'スケルトン', emoji: '💀', baseHp: 200, reward: { gold: 40,  xp: 60  }, size: 40 },
-  { name: 'デーモン',   emoji: '😈', baseHp: 250, reward: { gold: 50,  xp: 75  }, size: 44 },
+  { name: 'オーク',     emoji: '👹', baseHp: 360,  reward: { gold: 35,  xp: 50  }, size: 42, sprite: 'orc'      },
+  { name: 'スケルトン', emoji: '💀', baseHp: 400,  reward: { gold: 40,  xp: 60  }, size: 40, sprite: 'skeleton' },
+  { name: 'デーモン',   emoji: '😈', baseHp: 500,  reward: { gold: 50,  xp: 75  }, size: 44, sprite: 'dragon'   },
 
   // Tier 4 - 最上級
-  { name: 'ドラゴン',   emoji: '🐉', baseHp: 500, reward: { gold: 120, xp: 180 }, size: 52 },
-  { name: 'タイタン',   emoji: '🗿', baseHp: 600, reward: { gold: 150, xp: 220 }, size: 50 },
-  { name: 'クラーケン', emoji: '🐙', baseHp: 700, reward: { gold: 180, xp: 260 }, size: 54 },
-  { name: 'ヒドラ',     emoji: '🐍', baseHp: 800, reward: { gold: 210, xp: 300 }, size: 56 },
+  { name: 'ドラゴン',   emoji: '🐉', baseHp: 1000, reward: { gold: 120, xp: 180 }, size: 52, sprite: 'dragon'   },
+  { name: 'タイタン',   emoji: '🗿', baseHp: 1200, reward: { gold: 150, xp: 220 }, size: 50, sprite: 'orc'      },
+  { name: 'クラーケン', emoji: '🐙', baseHp: 1400, reward: { gold: 180, xp: 260 }, size: 54, sprite: 'dragon'   },
+  { name: 'ヒドラ',     emoji: '🐍', baseHp: 1600, reward: { gold: 210, xp: 300 }, size: 56, sprite: 'dragon'   },
 ];
 
 // ─────────────────────────────────────────
