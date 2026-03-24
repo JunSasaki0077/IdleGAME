@@ -167,47 +167,84 @@ export function useGameLoop(): GameLoopResult {
           })),
         };
 
-        // ── 主人公の攻撃（スキルごとに独立タイマーで発射） ──
+        // ── 主人公の攻撃 ──
         const atkInterval = 1 / s.atkSpeed;
         const newSkillTimers = { ...s.skillTimers };
         const newProjs: Projectile[] = [];
         let didAnyAttack = false;
 
-        const skillsToProcess = s.acquiredSkills.length > 0
-          ? s.acquiredSkills
-          : [{ defId: 'fireball', skillLv: 1 }];
+        if (s.acquiredSkills.length === 0) {
+          // デフォルト：近接攻撃（敵がSTOP_X圏内に到達した時のみ）
+          const MELEE_ID = '__melee__';
+          const timer = (newSkillTimers[MELEE_ID] ?? 0) + dt;
+          const closestEnemy = s.enemies.length > 0
+            ? s.enemies.reduce((a, b) => (a.x < b.x ? a : b))
+            : null;
+          const inRange = closestEnemy !== null && closestEnemy.x <= STOP_X + GAME_CONFIG.ATTACK_RANGE;
 
-        for (let i = 0; i < skillsToProcess.length; i++) {
-          const acquired = skillsToProcess[i];
-          const timerId = acquired.defId;
-          const timer = (newSkillTimers[timerId] ?? 0) + dt;
+          newSkillTimers[MELEE_ID] = inRange && timer >= atkInterval ? 0 : timer;
 
-          if (timer >= atkInterval && s.enemies.length > 0) {
-            newSkillTimers[timerId] = 0;
+          if (timer >= atkInterval && inRange) {
             didAnyAttack = true;
-
             const baseDmg = Math.floor(
               s.atk * (skillFx.atkMultiplier ?? 1) *
               (GAME_CONFIG.DAMAGE_VARIANCE_MIN + Math.random() * (GAME_CONFIG.DAMAGE_VARIANCE_MAX - GAME_CONFIG.DAMAGE_VARIANCE_MIN))
             );
-            const kind = SKILL_TO_PROJECTILE[acquired.defId] ?? 'fireball';
-            newProjs.push(createProjectile(
-              kind,
-              GAME_CONFIG.HERO_POSITION_X + 5,
-              GAME_CONFIG.PROJ_Y + i * 6,
-              baseDmg,
-            ));
+            effects.push(() => spawnDamageNumber(`-${baseDmg}`, closestEnemy.x, 20, '#ff6666'));
+            const newEnemyHp = closestEnemy.hp - baseDmg;
+            if (newEnemyHp <= 0) {
+              effects.push(() => spawnDamageNumber(`+${closestEnemy.reward.gold}G`, closestEnemy.x, 10, '#f0c040'));
+              s = {
+                ...s,
+                skillTimers: newSkillTimers,
+                gold: s.gold + closestEnemy.reward.gold,
+                xp: s.xp + closestEnemy.reward.xp,
+                enemies: s.enemies.filter((e) => e.id !== closestEnemy.id),
+              };
+            } else {
+              s = {
+                ...s,
+                skillTimers: newSkillTimers,
+                enemies: s.enemies.map((e) => e.id === closestEnemy.id ? { ...e, hp: newEnemyHp } : e),
+              };
+            }
           } else {
-            newSkillTimers[timerId] = timer;
+            s = { ...s, skillTimers: newSkillTimers };
           }
+        } else {
+          // スキルごとの遠距離攻撃（projectile発射）
+          for (let i = 0; i < s.acquiredSkills.length; i++) {
+            const acquired = s.acquiredSkills[i];
+            const timerId = acquired.defId;
+            const timer = (newSkillTimers[timerId] ?? 0) + dt;
+
+            if (timer >= atkInterval && s.enemies.length > 0) {
+              newSkillTimers[timerId] = 0;
+              didAnyAttack = true;
+              const baseDmg = Math.floor(
+                s.atk * (skillFx.atkMultiplier ?? 1) *
+                (GAME_CONFIG.DAMAGE_VARIANCE_MIN + Math.random() * (GAME_CONFIG.DAMAGE_VARIANCE_MAX - GAME_CONFIG.DAMAGE_VARIANCE_MIN))
+              );
+              const kind = SKILL_TO_PROJECTILE[acquired.defId] ?? 'fireball';
+              newProjs.push(createProjectile(
+                kind,
+                GAME_CONFIG.HERO_POSITION_X + 5,
+                GAME_CONFIG.PROJ_Y + i * 6,
+                baseDmg,
+              ));
+            } else {
+              newSkillTimers[timerId] = timer;
+            }
+          }
+
+          s = {
+            ...s,
+            skillTimers: newSkillTimers,
+            projectiles: didAnyAttack ? [...s.projectiles, ...newProjs] : s.projectiles,
+          };
         }
 
-        if (didAnyAttack) {
-          effects.push(() => triggerAttack());
-          s = { ...s, skillTimers: newSkillTimers, projectiles: [...s.projectiles, ...newProjs] };
-        } else {
-          s = { ...s, skillTimers: newSkillTimers };
-        }
+        if (didAnyAttack) effects.push(() => triggerAttack());
 
         // ── 弾を移動 ──
         s = {
