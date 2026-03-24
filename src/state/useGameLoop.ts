@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { GAME_CONFIG } from '../constants/gameConfig';
+import { GAME_CONFIG, STOP_X } from '../constants/gameConfig';
 import { UPGRADES } from '../constants/gameData';
 import { generateSkillChoices } from '../constants/skillData';
 import {
@@ -26,8 +26,6 @@ const SKILL_TO_PROJECTILE: Record<string, Projectile['kind']> = {
   thunder:  'thunder',
   ice:      'ice',
 };
-
-const STOP_X = GAME_CONFIG.HERO_POSITION_X + GAME_CONFIG.ENEMY_STOP_OFFSET;
 
 // ─────────────────────────────────────────
 //  戻り値の型

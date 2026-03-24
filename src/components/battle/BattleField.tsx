@@ -3,12 +3,12 @@
 //  Hero に HeroAnim を渡してアニメーションを切り替える
 // ============================================================
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text } from 'react-native';
 import { Hero, type HeroAnim } from './Hero';
 import { EnemySprite } from './EnemySprite';
 import { ProjectileSprite } from './ProjectileSprite';
-import { GAME_CONFIG } from '../../constants/gameConfig';
+import { GAME_CONFIG, STOP_X } from '../../constants/gameConfig';
 import type { GameState } from '../../state/gameState';
 import type { DamageNumber } from '../../types/gameTypes';
 
@@ -35,11 +35,11 @@ export const BattleField: React.FC<Props> = React.memo(({
 }) => {
   const stage = Math.min(Math.floor(state.level / GAME_CONFIG.STAGE_LEVEL_DIVISOR) + 1, GAME_CONFIG.MAX_STAGE);
 
-  // スキルなし時：敵がメレー圏内にいる間はずっと attack アニメーション
-  const STOP_X = GAME_CONFIG.HERO_POSITION_X + GAME_CONFIG.ENEMY_STOP_OFFSET;
-  const isInMeleeRange =
+  const isInMeleeRange = useMemo(() =>
     state.acquiredSkills.length === 0 &&
-    state.enemies.some((e) => e.x <= STOP_X + GAME_CONFIG.ATTACK_RANGE);
+    state.enemies.some((e) => e.x <= STOP_X + GAME_CONFIG.ATTACK_RANGE),
+    [state.enemies, state.acquiredSkills.length],
+  );
 
   const heroAnim: HeroAnim =
     isHit                       ? 'damage' :

@@ -4,6 +4,7 @@
 // ============================================================
 
 import { ENEMY_DEFS, CHARACTER_CLASSES } from '../constants/gameData';
+import { GAME_CONFIG } from '../constants/gameConfig';
 import { getSkillDef } from '../constants/skillData';
 import type { Enemy, CharacterClass, Projectile } from '../types/gameTypes';
 import type { AcquiredSkill, SkillEffect } from '../types/skillTypes';
@@ -80,19 +81,19 @@ export function getCurrentClass(level: number): CharacterClass {
 
 let enemyIdCounter = 0;
 export function createEnemy(level: number): Enemy {
-  const maxTier = Math.min(Math.floor(level / 4), ENEMY_DEFS.length - 1);
+  const maxTier = Math.min(Math.floor(level / GAME_CONFIG.ENEMY_TIER_LEVEL_DIVISOR), ENEMY_DEFS.length - 1);
   const def = ENEMY_DEFS[Math.floor(Math.random() * (maxTier + 1))];
-  const scaleFactor = 1 + level * 0.08;
+  const scaleFactor = 1 + level * GAME_CONFIG.ENEMY_HP_SCALE_PER_LEVEL;
   const hp = Math.floor(def.baseHp * scaleFactor);
   return {
     id: enemyIdCounter++,
     def,
     hp,
     maxHp: hp,
-    x: 110,
+    x: GAME_CONFIG.ENEMY_SPAWN_X,
     reward: {
-      gold: Math.floor(def.reward.gold * (1 + level * 0.1)),
-      xp:   Math.floor(def.reward.xp   * (1 + level * 0.05)),
+      gold: Math.floor(def.reward.gold * (1 + level * GAME_CONFIG.ENEMY_GOLD_SCALE_PER_LEVEL)),
+      xp:   Math.floor(def.reward.xp   * (1 + level * GAME_CONFIG.ENEMY_XP_SCALE_PER_LEVEL)),
     },
   };
 }
@@ -183,10 +184,10 @@ export function applyLevelUp(state: GameState): GameState {
       ...s,
       xp:                 s.xp - s.maxXp,
       level:              s.level + 1,
-      maxXp:              Math.floor(s.maxXp * 1.55),
-      atk:                s.atk + 2,
-      maxHp:              s.maxHp + 10,
-      hp:                 s.maxHp + 10,
+      maxXp:              Math.floor(s.maxXp * GAME_CONFIG.XP_MULTIPLIER),
+      atk:                s.atk + GAME_CONFIG.LEVEL_UP_ATK_BONUS,
+      maxHp:              s.maxHp + GAME_CONFIG.LEVEL_UP_HP_BONUS,
+      hp:                 s.maxHp + GAME_CONFIG.LEVEL_UP_HP_BONUS,
       skillPoints:        s.skillPoints + 1,
       pendingSkillChoice: true,
     };

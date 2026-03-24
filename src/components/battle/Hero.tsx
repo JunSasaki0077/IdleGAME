@@ -4,8 +4,9 @@
 //  フレームを一定間隔で切り替えて動かす
 // ============================================================
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Image, View } from 'react-native';
+import { useFrameAnimation } from '../../hooks/useFrameAnimation';
 
 // ─────────────────────────────────────────
 //  アニメーションの種類
@@ -68,24 +69,8 @@ type Props = {
 // ─────────────────────────────────────────
 
 export const Hero: React.FC<Props> = ({ anim, size = 72 }) => {
-  const [frameIndex, setFrameIndex] = useState(0);
-
-  // アニメーションが切り替わったらフレームをリセット
-  useEffect(() => {
-    setFrameIndex(0);
-  }, [anim]);
-
-  // フレームを一定間隔で進める
-  useEffect(() => {
-    const frames = FRAMES[anim];
-    const speed  = ANIM_SPEED[anim];
-
-    const timer = setInterval(() => {
-      setFrameIndex((prev) => (prev + 1) % frames.length);
-    }, speed);
-
-    return () => clearInterval(timer);
-  }, [anim]);
+  const frames = FRAMES[anim];
+  const frameIndex = useFrameAnimation(frames.length, ANIM_SPEED[anim]);
 
   return (
     <View className="absolute bottom-[10%] left-[10%] z-[10]">

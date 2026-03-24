@@ -4,11 +4,12 @@
 //  sprite が設定されている場合は PNG アニメーション、なければ絵文字
 // ============================================================
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text, Image } from 'react-native';
 import { GAME_CONFIG } from '../../constants/gameConfig';
 import type { Enemy } from '../../types/gameTypes';
 import { clampRatio } from '../../utils/format';
+import { useFrameAnimation } from '../../hooks/useFrameAnimation';
 
 // ─────────────────────────────────────────
 //  スプライト画像マップ（require は静的パスが必要なので全列挙）
@@ -68,17 +69,8 @@ type Props = {
 // ─────────────────────────────────────────
 
 export const EnemySprite: React.FC<Props> = React.memo(({ enemy }) => {
-  const [frameIndex, setFrameIndex] = useState(0);
-  const spriteKey = enemy.def.sprite ?? null;
-  const frames = spriteKey ? ENEMY_FRAMES[spriteKey] : null;
-
-  useEffect(() => {
-    if (!frames) return;
-    const timer = setInterval(() => {
-      setFrameIndex((prev) => (prev + 1) % frames.length);
-    }, ANIM_SPEED);
-    return () => clearInterval(timer);
-  }, [spriteKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const frames = enemy.def.sprite ? ENEMY_FRAMES[enemy.def.sprite] : null;
+  const frameIndex = useFrameAnimation(frames ? frames.length : null, ANIM_SPEED);
 
   const hpRatio = clampRatio(enemy.hp, enemy.maxHp);
   const sizeMultiplier = enemy.isBoss ? GAME_CONFIG.BOSS_SIZE_MULTIPLIER : 1;
@@ -125,9 +117,11 @@ export const EnemySprite: React.FC<Props> = React.memo(({ enemy }) => {
   );
 }, (prev, next) => {
   return (
-    prev.enemy.id === next.enemy.id &&
-    prev.enemy.hp === next.enemy.hp &&
-    prev.enemy.x === next.enemy.x &&
-    prev.enemy.isBoss === next.enemy.isBoss
+    prev.enemy.id     === next.enemy.id     &&
+    prev.enemy.hp     === next.enemy.hp     &&
+    prev.enemy.x      === next.enemy.x      &&
+    prev.enemy.isBoss === next.enemy.isBoss &&
+    prev.enemy.def.sprite === next.enemy.def.sprite &&
+    prev.enemy.def.size   === next.enemy.def.size
   );
 });

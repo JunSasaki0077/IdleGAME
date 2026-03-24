@@ -63,3 +63,6 @@ export const GAME_CONFIG = {
   OFFLINE_MAX_SECONDS: 28800,     // オフライン報酬の最大蓄積時間（8時間）
   OFFLINE_EFFICIENCY: 0.5,        // オフライン中の資源獲得効率（50%）
 } as const;
+
+// HERO_POSITION_X + ENEMY_STOP_OFFSET の合成値（useGameLoop・BattleField共通）
+export const STOP_X = GAME_CONFIG.HERO_POSITION_X + GAME_CONFIG.ENEMY_STOP_OFFSET;
