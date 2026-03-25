@@ -66,4 +66,10 @@ export const AcquiredSkillList: React.FC<Props> = React.memo(({ acquiredSkills }
       contentInsetAdjustmentBehavior="automatic"
     />
   );
-}, (prev, next) => prev.acquiredSkills === next.acquiredSkills);
+}, (prev, next) => {
+  if (prev.acquiredSkills.length !== next.acquiredSkills.length) return false;
+  return prev.acquiredSkills.every((s, i) =>
+    s.defId === next.acquiredSkills[i].defId &&
+    s.skillLv === next.acquiredSkills[i].skillLv
+  );
+});

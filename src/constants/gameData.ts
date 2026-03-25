@@ -54,7 +54,7 @@ export const UPGRADES: Upgrade[] = [
     name: '剣の強化',
     desc: '攻撃力 +5 / Gold +1/s',
     cost: 50,
-    bought: false,
+    level: 0,
     apply: (s) => ({ ...s, atk: s.atk + 5, goldPerSec: s.goldPerSec + 1 }),
   },
   {
@@ -63,7 +63,7 @@ export const UPGRADES: Upgrade[] = [
     name: '魔法書',
     desc: 'EXP +3/s / 攻速 +0.3',
     cost: 80,
-    bought: false,
+    level: 0,
     apply: (s) => ({ ...s, xpPerSec: s.xpPerSec + 3, atkSpeed: s.atkSpeed + 0.3 }),
   },
   {
@@ -72,7 +72,7 @@ export const UPGRADES: Upgrade[] = [
     name: '鎧の強化',
     desc: '最大HP +60',
     cost: 120,
-    bought: false,
+    level: 0,
     apply: (s) => ({ ...s, maxHp: s.maxHp + 60, hp: s.maxHp + 60 }),
   },
   {
@@ -81,7 +81,7 @@ export const UPGRADES: Upgrade[] = [
     name: '疾風の靴',
     desc: '敵の出現速度アップ',
     cost: 180,
-    bought: false,
+    level: 0,
     apply: (s) => ({ ...s, spawnInterval: Math.max(1, s.spawnInterval - 0.8) }),
   },
   {
@@ -90,7 +90,7 @@ export const UPGRADES: Upgrade[] = [
     name: '錬金術',
     desc: 'Gold +5/s',
     cost: 250,
-    bought: false,
+    level: 0,
     apply: (s) => ({ ...s, goldPerSec: s.goldPerSec + 5 }),
   },
   {
@@ -99,7 +99,7 @@ export const UPGRADES: Upgrade[] = [
     name: '速攻の書',
     desc: '攻速 +0.5',
     cost: 300,
-    bought: false,
+    level: 0,
     apply: (s) => ({ ...s, atkSpeed: s.atkSpeed + 0.5 }),
   },
   {
@@ -108,7 +108,7 @@ export const UPGRADES: Upgrade[] = [
     name: '魔法の杖',
     desc: '攻撃力 +15 / EXP +5/s',
     cost: 400,
-    bought: false,
+    level: 0,
     apply: (s) => ({ ...s, atk: s.atk + 15, xpPerSec: s.xpPerSec + 5 }),
   },
   {
@@ -117,7 +117,7 @@ export const UPGRADES: Upgrade[] = [
     name: '魔力の水晶',
     desc: '全ステータス +10%',
     cost: 700,
-    bought: false,
+    level: 0,
     apply: (s) => ({
       ...s,
       atk:        Math.floor(s.atk * 1.1),

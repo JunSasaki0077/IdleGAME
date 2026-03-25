@@ -49,7 +49,7 @@ export type Enemy = {
 //  弾（Projectile）
 // ─────────────────────────────────────────
 
-export type ProjectileKind = 'fireball' | 'thunder' | 'ice';
+export type ProjectileKind = 'orb' | 'fireball' | 'thunder' | 'ice';
 
 export type Projectile = {
   id: number;
@@ -66,6 +66,7 @@ export const PROJECTILE_VISUALS: Record<ProjectileKind, {
   color: string;
   size: number;
 }> = {
+  orb:      { emoji: '⚪', color: '#ffffff', size: 16 },
   fireball: { emoji: '🔥', color: '#ff6600', size: 20 },
   thunder:  { emoji: '⚡', color: '#ffdd00', size: 18 },
   ice:      { emoji: '❄️', color: '#66ddff', size: 18 },
@@ -80,8 +81,8 @@ export type Upgrade = {
   icon: string;
   name: string;
   desc: string;
-  cost: number;
-  bought: boolean;
+  cost: number;    // 現在のコスト（購入するたびに増加）
+  level: number;   // 購入回数
   apply: (state: GameState) => GameState;
 };
 

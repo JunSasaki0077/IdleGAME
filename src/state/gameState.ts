@@ -33,6 +33,8 @@ export type GameState = {
   // 敵
   enemies: Enemy[];
   spawnInterval: number;
+  killCount: number;        // 現在のウェーブでの撃破数
+  nextSpawnIsBoss: boolean; // 次のスポーンがボスかどうか
 
   // 弾（新規追加）
   projectiles: Projectile[];
@@ -63,6 +65,8 @@ export const INITIAL_STATE: GameState = {
   pendingSkillChoice: false,
   enemies: [],
   spawnInterval: 3.5,
+  killCount: 0,
+  nextSpawnIsBoss: false,
   projectiles: [],
   spawnTimer: 0,
   enemyAtkTimer: 0,
@@ -79,21 +83,40 @@ export function getCurrentClass(level: number): CharacterClass {
     .find((c) => level >= c.minLevel) ?? CHARACTER_CLASSES[0];
 }
 
+/** 近接攻撃IDの定数（マジックストリング防止） */
+export const MELEE_ATTACK_ID = '__melee__' as const;
+
+/** ダメージ計算（分散付き） */
+export function calcAttackDamage(atk: number, atkMultiplier: number): number {
+  const variance = GAME_CONFIG.DAMAGE_VARIANCE_MIN +
+    Math.random() * (GAME_CONFIG.DAMAGE_VARIANCE_MAX - GAME_CONFIG.DAMAGE_VARIANCE_MIN);
+  return Math.floor(atk * atkMultiplier * variance);
+}
+
+/** 最も近い（X座標が最小の）敵を返す */
+export function findClosestEnemy(enemies: Enemy[]): Enemy | null {
+  if (enemies.length === 0) return null;
+  return enemies.reduce((a, b) => (a.x < b.x ? a : b));
+}
+
 let enemyIdCounter = 0;
-export function createEnemy(level: number): Enemy {
-  const maxTier = Math.min(Math.floor(level / GAME_CONFIG.ENEMY_TIER_LEVEL_DIVISOR), ENEMY_DEFS.length - 1);
-  const def = ENEMY_DEFS[Math.floor(Math.random() * (maxTier + 1))];
+export function createEnemy(level: number, isBoss = false): Enemy {
+  const maxTierIndex = Math.min(Math.floor(level / GAME_CONFIG.ENEMY_TIER_LEVEL_DIVISOR), ENEMY_DEFS.length - 1);
+  const def = ENEMY_DEFS[Math.floor(Math.random() * (maxTierIndex + 1))] ?? ENEMY_DEFS[0];
   const scaleFactor = 1 + level * GAME_CONFIG.ENEMY_HP_SCALE_PER_LEVEL;
-  const hp = Math.floor(def.baseHp * scaleFactor);
+  const baseHp = isBoss ? Math.floor(def.baseHp * GAME_CONFIG.BOSS_HP_MULTIPLIER) : def.baseHp;
+  const hp = Math.floor(baseHp * scaleFactor);
+  const rewardMultiplier = isBoss ? GAME_CONFIG.BOSS_REWARD_MULTIPLIER : 1;
   return {
     id: enemyIdCounter++,
     def,
     hp,
     maxHp: hp,
     x: GAME_CONFIG.ENEMY_SPAWN_X,
+    isBoss,
     reward: {
-      gold: Math.floor(def.reward.gold * (1 + level * GAME_CONFIG.ENEMY_GOLD_SCALE_PER_LEVEL)),
-      xp:   Math.floor(def.reward.xp   * (1 + level * GAME_CONFIG.ENEMY_XP_SCALE_PER_LEVEL)),
+      gold: Math.floor(def.reward.gold * (1 + level * GAME_CONFIG.ENEMY_GOLD_SCALE_PER_LEVEL) * rewardMultiplier),
+      xp:   Math.floor(def.reward.xp   * (1 + level * GAME_CONFIG.ENEMY_XP_SCALE_PER_LEVEL) * rewardMultiplier),
     },
   };
 }

@@ -13,8 +13,11 @@ import {
   createEnemy,
   createProjectile,
   calcSkillEffects,
+  calcAttackDamage,
+  findClosestEnemy,
   acquireSkill,
   upgradeSkillWithSP,
+  MELEE_ATTACK_ID,
   type GameState,
 } from './gameState';
 import type { Upgrade, DamageNumber, Projectile } from '../types/gameTypes';
@@ -125,10 +128,14 @@ export function useGameLoop(): GameLoopResult {
   const buyUpgrade = useCallback((upgradeId: string) => {
     const current = stateRef.current;
     const upg = upgrades.find((u) => u.id === upgradeId);
-    if (!upg || upg.bought || current.gold < upg.cost) return;
+    if (!upg || current.gold < upg.cost) return;
     const newState = upg.apply({ ...current, gold: current.gold - upg.cost });
     setState(newState);
-    setUpgrades((prev) => prev.map((u) => u.id === upgradeId ? { ...u, bought: true } : u));
+    setUpgrades((prev) => prev.map((u) =>
+      u.id === upgradeId
+        ? { ...u, level: u.level + 1, cost: Math.floor(u.cost * GAME_CONFIG.UPGRADE_COST_MULTIPLIER) }
+        : u
+    ));
   }, [upgrades]);
 
   // ─── メインゲームループ（requestAnimationFrame） ───
@@ -152,7 +159,13 @@ export function useGameLoop(): GameLoopResult {
 
         // ── 敵スポーン ──
         if (s.spawnTimer >= s.spawnInterval) {
-          s = { ...s, spawnTimer: 0, enemies: [...s.enemies, createEnemy(s.level)] };
+          const isBoss = s.nextSpawnIsBoss;
+          s = {
+            ...s,
+            spawnTimer: 0,
+            nextSpawnIsBoss: false,
+            enemies: [...s.enemies, createEnemy(s.level, isBoss)],
+          };
         }
 
         // ── 敵を移動（スロウ反映） ──
@@ -172,43 +185,25 @@ export function useGameLoop(): GameLoopResult {
         let didAnyAttack = false;
 
         if (s.acquiredSkills.length === 0) {
-          // デフォルト：近接攻撃（敵がSTOP_X圏内に到達した時のみ）
-          const MELEE_ID = '__melee__';
-          const timer = (newSkillTimers[MELEE_ID] ?? 0) + dt;
-          const closestEnemy = s.enemies.length > 0
-            ? s.enemies.reduce((a, b) => (a.x < b.x ? a : b))
-            : null;
-          const inRange = closestEnemy !== null && closestEnemy.x <= STOP_X + GAME_CONFIG.ATTACK_RANGE;
+          // デフォルト：白い玉の遠距離攻撃（敵がいれば即時発射）
+          const timer = (newSkillTimers[MELEE_ATTACK_ID] ?? 0) + dt;
+          newSkillTimers[MELEE_ATTACK_ID] = timer >= atkInterval ? 0 : timer;
 
-          newSkillTimers[MELEE_ID] = inRange && timer >= atkInterval ? 0 : timer;
-
-          if (timer >= atkInterval && inRange) {
+          if (timer >= atkInterval && s.enemies.length > 0) {
             didAnyAttack = true;
-            const baseDmg = Math.floor(
-              s.atk * (skillFx.atkMultiplier ?? 1) *
-              (GAME_CONFIG.DAMAGE_VARIANCE_MIN + Math.random() * (GAME_CONFIG.DAMAGE_VARIANCE_MAX - GAME_CONFIG.DAMAGE_VARIANCE_MIN))
-            );
-            effects.push(() => spawnDamageNumber(`-${baseDmg}`, closestEnemy.x, 20, '#ff6666'));
-            const newEnemyHp = closestEnemy.hp - baseDmg;
-            if (newEnemyHp <= 0) {
-              effects.push(() => spawnDamageNumber(`+${closestEnemy.reward.gold}G`, closestEnemy.x, 10, '#f0c040'));
-              s = {
-                ...s,
-                skillTimers: newSkillTimers,
-                gold: s.gold + closestEnemy.reward.gold,
-                xp: s.xp + closestEnemy.reward.xp,
-                enemies: s.enemies.filter((e) => e.id !== closestEnemy.id),
-              };
-            } else {
-              s = {
-                ...s,
-                skillTimers: newSkillTimers,
-                enemies: s.enemies.map((e) => e.id === closestEnemy.id ? { ...e, hp: newEnemyHp } : e),
-              };
-            }
-          } else {
-            s = { ...s, skillTimers: newSkillTimers };
+            const baseDmg = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1);
+            newProjs.push(createProjectile(
+              'orb',
+              GAME_CONFIG.HERO_POSITION_X + 5,
+              GAME_CONFIG.PROJ_Y,
+              baseDmg,
+            ));
           }
+          s = {
+            ...s,
+            skillTimers: newSkillTimers,
+            projectiles: didAnyAttack ? [...s.projectiles, ...newProjs] : s.projectiles,
+          };
         } else {
           // スキルごとの遠距離攻撃（projectile発射）
           for (let i = 0; i < s.acquiredSkills.length; i++) {
@@ -219,10 +214,7 @@ export function useGameLoop(): GameLoopResult {
             if (timer >= atkInterval && s.enemies.length > 0) {
               newSkillTimers[timerId] = 0;
               didAnyAttack = true;
-              const baseDmg = Math.floor(
-                s.atk * (skillFx.atkMultiplier ?? 1) *
-                (GAME_CONFIG.DAMAGE_VARIANCE_MIN + Math.random() * (GAME_CONFIG.DAMAGE_VARIANCE_MAX - GAME_CONFIG.DAMAGE_VARIANCE_MIN))
-              );
+              const baseDmg = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1);
               const kind = SKILL_TO_PROJECTILE[acquired.defId] ?? 'fireball';
               newProjs.push(createProjectile(
                 kind,
@@ -255,14 +247,13 @@ export function useGameLoop(): GameLoopResult {
         let enemies     = [...s.enemies];
         let goldGain    = 0;
         let xpGain      = 0;
+        let killCount   = 0;
 
         for (const proj of projectiles) {
           if (proj.hit) continue;
 
-          // 毎フレームソートせず、reduce で最左敵を O(n) で取得
-          const target = enemies.length > 0
-            ? enemies.reduce((a, b) => a.x < b.x ? a : b)
-            : null;
+          // 毎フレームソートせず、O(n) で最左敵を取得
+          const target = findClosestEnemy(enemies);
 
           if (!target || proj.x < target.x - GAME_CONFIG.ATTACK_RANGE) continue;
 
@@ -276,17 +267,25 @@ export function useGameLoop(): GameLoopResult {
             goldGain += target.reward.gold;
             xpGain   += target.reward.xp;
             enemies   = enemies.filter((e) => e.id !== target.id);
+            killCount++;
           } else {
             enemies = enemies.map((e) => e.id === target.id ? { ...e, hp: newHp } : e);
           }
         }
 
+        const newKillCount = s.killCount + killCount;
+        const nextSpawnIsBoss = !s.nextSpawnIsBoss &&
+          newKillCount > 0 &&
+          newKillCount % GAME_CONFIG.BOSS_SPAWN_KILL_COUNT === 0;
+
         s = {
           ...s,
-          gold:        s.gold + goldGain,
-          xp:          s.xp   + xpGain,
+          gold:             s.gold + goldGain,
+          xp:               s.xp   + xpGain,
+          killCount:        newKillCount,
+          nextSpawnIsBoss:  s.nextSpawnIsBoss || nextSpawnIsBoss,
           enemies,
-          projectiles: projectiles.filter((p) => !p.hit && p.x < 115),
+          projectiles: projectiles.filter((p) => !p.hit && p.x < GAME_CONFIG.PROJECTILE_DESPAWN_X),
         };
 
         // ── 敵の攻撃 ──

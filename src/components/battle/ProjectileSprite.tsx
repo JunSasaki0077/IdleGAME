@@ -35,7 +35,8 @@ export const ProjectileSprite: React.FC<Props> = React.memo(({ projectile }) => 
   );
 }, (prev, next) =>
   prev.projectile.id === next.projectile.id &&
-  prev.projectile.x  === next.projectile.x
+  prev.projectile.x  === next.projectile.x  &&
+  prev.projectile.y  === next.projectile.y
 );
 
 const styles = StyleSheet.create({

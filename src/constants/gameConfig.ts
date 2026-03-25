@@ -31,7 +31,7 @@ export const GAME_CONFIG = {
   CRITICAL_ANIMATION_DURATION: 300, // クリティカル演出時間（ミリ秒）
 
   // ボス設定
-  BOSS_SPAWN_CHANCE: 0.1,         // ボス出現確率（10%）
+  BOSS_SPAWN_KILL_COUNT: 10,      // この体数を倒すとボスが出現
   BOSS_HP_MULTIPLIER: 5.0,        // ボスのHP倍率
   BOSS_REWARD_MULTIPLIER: 3.0,    // ボスの報酬倍率
   BOSS_SIZE_MULTIPLIER: 1.5,      // ボスのサイズ倍率
@@ -62,6 +62,9 @@ export const GAME_CONFIG = {
   // オフライン報酬設定
   OFFLINE_MAX_SECONDS: 28800,     // オフライン報酬の最大蓄積時間（8時間）
   OFFLINE_EFFICIENCY: 0.5,        // オフライン中の資源獲得効率（50%）
+
+  // 弾の判定
+  PROJECTILE_DESPAWN_X: 115,      // 弾が画面外とみなされるX座標（%）
 } as const;
 
 // HERO_POSITION_X + ENEMY_STOP_OFFSET の合成値（useGameLoop・BattleField共通）

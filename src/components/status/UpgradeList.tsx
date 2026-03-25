@@ -28,47 +28,44 @@ type ItemProps = {
   onBuy: (id: string) => void;
 };
 
-const UpgradeItem: React.FC<ItemProps> = React.memo(({ upgrade, canAfford, onBuy }) => {
-  const disabled = upgrade.bought || !canAfford;
+const UpgradeItem: React.FC<ItemProps> = React.memo(({ upgrade, canAfford, onBuy }) => (
+  <Pressable
+    className={`flex-row items-center gap-2.5 bg-[#0d0d20] border border-[#2a2a4a] rounded-lg py-2 px-3 mb-1.5 ${
+      !canAfford ? 'opacity-35' : ''
+    }`}
+    onPress={() => onBuy(upgrade.id)}
+    disabled={!canAfford}
+  >
+    {/* アイコン */}
+    <Text className="text-xl">{upgrade.icon}</Text>
 
-  return (
-    <Pressable
-      className={`flex-row items-center gap-2.5 bg-[#0d0d20] border border-[#2a2a4a] rounded-lg py-2 px-3 mb-1.5 ${
-        disabled ? 'opacity-35' : ''
-      }`}
-      onPress={() => onBuy(upgrade.id)}
-      disabled={disabled}
-    >
-      {/* アイコン */}
-      <Text className="text-xl">{upgrade.icon}</Text>
-
-      {/* 名前・説明 */}
-      <View className="flex-1">
-        <View className="flex-row items-center gap-1.5 mb-0.5">
-          <Text className="text-xs font-bold text-game-text">{upgrade.name}</Text>
-          {upgrade.bought && (
-            <View className="bg-game-purple-dark border border-game-purple rounded px-1 py-0.5">
-              <Text className="font-mono text-[8px] text-game-purple-light">購入済</Text>
-            </View>
-          )}
-        </View>
-        <Text className="text-[10px] text-[#6666aa]">{upgrade.desc}</Text>
+    {/* 名前・説明 */}
+    <View className="flex-1">
+      <View className="flex-row items-center gap-1.5 mb-0.5">
+        <Text className="text-xs font-bold text-game-text">{upgrade.name}</Text>
+        {upgrade.level > 0 && (
+          <View className="bg-game-purple-dark border border-game-purple rounded px-1 py-0.5">
+            <Text className="font-mono text-[8px] text-game-purple-light">Lv{upgrade.level}</Text>
+          </View>
+        )}
       </View>
+      <Text className="text-[10px] text-[#6666aa]">{upgrade.desc}</Text>
+    </View>
 
-      {/* コスト */}
-      <Text
-        className={`font-mono text-[11px] font-bold ${
-          canAfford && !upgrade.bought ? 'text-[#f0c040]' : 'text-[#6666aa]'
-        }`}
-      >
-        {upgrade.bought ? '✓' : `🪙${formatNumber(upgrade.cost)}`}
-      </Text>
-    </Pressable>
-  );
-}, (prev, next) => (
-  prev.upgrade.id     === next.upgrade.id &&
-  prev.upgrade.bought === next.upgrade.bought &&
-  prev.canAfford      === next.canAfford
+    {/* コスト */}
+    <Text
+      className={`font-mono text-[11px] font-bold ${
+        canAfford ? 'text-[#f0c040]' : 'text-[#6666aa]'
+      }`}
+    >
+      🪙{formatNumber(upgrade.cost)}
+    </Text>
+  </Pressable>
+), (prev, next) => (
+  prev.upgrade.id    === next.upgrade.id &&
+  prev.upgrade.level === next.upgrade.level &&
+  prev.upgrade.cost  === next.upgrade.cost &&
+  prev.canAfford     === next.canAfford
 ));
 
 // ─────────────────────────────────────────
