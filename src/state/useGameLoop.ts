@@ -41,9 +41,12 @@ export type GameLoopResult = {
   isAttacking: boolean;
   isHit: boolean;
   skillChoices: SkillDef[];
+  isRunOver: boolean;
+  gemsEarned: number;
   buyUpgrade: (id: string) => void;
   selectSkill: (skillDefId: string) => void;
   upgradeSkill: (skillDefId: string) => void;
+  retireRun: () => void;
 };
 
 // ─────────────────────────────────────────
@@ -62,6 +65,8 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
   const [isAttacking, setIsAttacking]     = useState(false);
   const [isHit, setIsHit]                 = useState(false);
   const [skillChoices, setSkillChoices]   = useState<SkillDef[]>([]);
+  const [isRunOver, setIsRunOver]         = useState(false);
+  const [gemsEarned, setGemsEarned]       = useState(0);
 
   const stateRef     = useRef<GameState>(INITIAL_STATE);
   const dmgIdCounter = useRef(0);
@@ -129,6 +134,21 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
     setState((prev) => upgradeSkillWithSP(prev, skillDefId));
   }, []);
 
+  // ─── リタイア（手動でランを終了） ───
+  const retireRun = useCallback(() => {
+    setGemsEarned((prev) => {
+      // すでに計算済みなら上書きしない
+      if (prev > 0) return prev;
+      return 0; // stateから正確な値を取得するためsetState後に再計算
+    });
+    setState((prev) => {
+      const earned = prev.waveNumber * GAME_CONFIG.GEMS_PER_WAVE;
+      setGemsEarned(earned);
+      return prev;
+    });
+    setIsRunOver(true);
+  }, []);
+
   // ─── アップグレード購入 ───
   const buyUpgrade = useCallback((upgradeId: string) => {
     const current = stateRef.current;
@@ -162,13 +182,35 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
         let s = tickGame(prev, dt);
         const skillFx = calcSkillEffects(s.acquiredSkills);
 
-        // ── 敵スポーン ──
-        if (s.spawnTimer >= s.spawnInterval) {
-          const isBoss = s.nextSpawnIsBoss;
+        // ── ウェーブ間休憩 ──
+        if (s.waveBreaking) {
+          const remaining = s.waveBreakTimer - dt;
+          if (remaining <= 0) {
+            const nextWave = s.waveNumber + 1;
+            s = {
+              ...s,
+              waveBreaking: false,
+              waveBreakTimer: 0,
+              waveNumber: nextWave,
+              waveEnemiesTotal: GAME_CONFIG.WAVE_BASE_ENEMIES + (nextWave - 1) * GAME_CONFIG.WAVE_ENEMIES_PER_WAVE,
+              waveEnemiesSpawned: 0,
+              waveEnemiesKilled: 0,
+              spawnTimer: s.spawnInterval, // 即座に最初の敵をスポーン
+            };
+          } else {
+            s = { ...s, waveBreakTimer: remaining };
+          }
+        }
+
+        // ── 敵スポーン（休憩中以外） ──
+        if (!s.waveBreaking && s.waveEnemiesSpawned < s.waveEnemiesTotal && s.spawnTimer >= s.spawnInterval) {
+          const isLastEnemy = s.waveEnemiesSpawned === s.waveEnemiesTotal - 1;
+          const isBossWave  = s.waveNumber % GAME_CONFIG.BOSS_WAVE_INTERVAL === 0;
+          const isBoss      = isLastEnemy && isBossWave;
           s = {
             ...s,
             spawnTimer: 0,
-            nextSpawnIsBoss: false,
+            waveEnemiesSpawned: s.waveEnemiesSpawned + 1,
             enemies: [...s.enemies, createEnemy(s.level, isBoss)],
           };
         }
@@ -252,11 +294,11 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
         };
 
         // ── 弾の当たり判定 ──
-        let projectiles = [...s.projectiles];
-        let enemies     = [...s.enemies];
-        let goldGain    = 0;
-        let xpGain      = 0;
-        let killCount   = 0;
+        let projectiles    = [...s.projectiles];
+        let enemies        = [...s.enemies];
+        let goldGain       = 0;
+        let xpGain         = 0;
+        let waveKillGain   = 0;
 
         for (const proj of projectiles) {
           if (proj.hit) continue;
@@ -273,28 +315,34 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
 
           if (newHp <= 0) {
             effects.push(() => spawnDamageNumber(`+${target.reward.gold}G`, target.x, 10, '#f0c040'));
-            goldGain += target.reward.gold;
-            xpGain   += target.reward.xp;
-            enemies   = enemies.filter((e) => e.id !== target.id);
-            killCount++;
+            goldGain     += target.reward.gold;
+            xpGain       += target.reward.xp;
+            enemies       = enemies.filter((e) => e.id !== target.id);
+            waveKillGain++;
           } else {
             enemies = enemies.map((e) => e.id === target.id ? { ...e, hp: newHp } : e);
           }
         }
 
-        const newKillCount = s.killCount + killCount;
-        const nextSpawnIsBoss = !s.nextSpawnIsBoss &&
-          newKillCount > 0 &&
-          newKillCount % GAME_CONFIG.BOSS_SPAWN_KILL_COUNT === 0;
+        const newWaveKilled = s.waveEnemiesKilled + waveKillGain;
+
+        // ウェーブ完了判定（全スポーン完了 & 全撃破）
+        const waveComplete = !s.waveBreaking &&
+          s.waveEnemiesSpawned >= s.waveEnemiesTotal &&
+          newWaveKilled >= s.waveEnemiesTotal &&
+          enemies.length === 0;
 
         s = {
           ...s,
-          gold:             s.gold + goldGain,
-          xp:               s.xp   + xpGain,
-          killCount:        newKillCount,
-          nextSpawnIsBoss:  s.nextSpawnIsBoss || nextSpawnIsBoss,
+          gold:               s.gold + goldGain,
+          xp:                 s.xp   + xpGain,
+          waveEnemiesKilled:  newWaveKilled,
           enemies,
           projectiles: projectiles.filter((p) => !p.hit && p.x < GAME_CONFIG.PROJECTILE_DESPAWN_X),
+          ...(waveComplete ? {
+            waveBreaking:    true,
+            waveBreakTimer:  GAME_CONFIG.WAVE_BREAK_DURATION,
+          } : {}),
         };
 
         // ── 敵の攻撃 ──
@@ -330,8 +378,13 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
             }
 
             if (newHp <= 0) {
-              s = { ...s, hp: s.maxHp, enemies: [], projectiles: [] };
-              effects.push(() => spawnDamageNumber('💀 REVIVE!', GAME_CONFIG.HERO_POSITION_X, 15, '#c084fc'));
+              // ランオーバー（リバイブなし）
+              const earned = s.waveNumber * GAME_CONFIG.GEMS_PER_WAVE;
+              s = { ...s, hp: 0, enemies: [], projectiles: [] };
+              effects.push(() => {
+                setGemsEarned(earned);
+                setIsRunOver(true);
+              });
             }
           }
         } else {
@@ -352,5 +405,5 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
     return () => cancelAnimationFrame(raf);
   }, [spawnDamageNumber, triggerAttack, triggerHit]);
 
-  return { state, upgrades, damageNumbers, isAttacking, isHit, skillChoices, buyUpgrade, selectSkill, upgradeSkill };
+  return { state, upgrades, damageNumbers, isAttacking, isHit, skillChoices, isRunOver, gemsEarned, buyUpgrade, selectSkill, upgradeSkill, retireRun };
 }

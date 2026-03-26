@@ -65,6 +65,15 @@ export const GAME_CONFIG = {
 
   // 弾の判定
   PROJECTILE_DESPAWN_X: 115,      // 弾が画面外とみなされるX座標（%）
+
+  // ウェーブシステム
+  WAVE_BASE_ENEMIES: 8,           // Wave 1の敵数
+  WAVE_ENEMIES_PER_WAVE: 2,       // ウェーブごとの追加敵数
+  WAVE_BREAK_DURATION: 3.0,       // ウェーブ間の休憩時間（秒）
+  BOSS_WAVE_INTERVAL: 5,          // ボスが出現するウェーブ間隔（5の倍数）
+
+  // ジェム・ラボシステム
+  GEMS_PER_WAVE: 3,               // ウェーブクリアごとのジェム獲得数
 } as const;
 
 // HERO_POSITION_X + ENEMY_STOP_OFFSET の合成値（useGameLoop・BattleField共通）

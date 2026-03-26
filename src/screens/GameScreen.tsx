@@ -1,18 +1,21 @@
 // ============================================================
 //  screens/GameScreen.tsx
 //  ゲーム画面全体のレイアウト
-//  セーブ/ロード・オフライン報酬・自動セーブ対応
+//  セーブ/ロード・自動セーブ・ウェーブシステム・ランオーバー対応
 // ============================================================
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'; // eslint-disable-line
-import { View, Text, AppState, type AppStateStatus } from 'react-native';
+import { View, Text, Pressable, AppState, type AppStateStatus } from 'react-native';
 import { BattleField } from '../components/battle/BattleField';
 import { StatusPanel } from '../components/status/StatusPanel';
 import { SkillSelectModal } from '../components/SkillSelectModal';
+import { RunOverModal } from '../components/RunOverModal';
+import { LabModal } from '../components/LabModal';
 import { useGameLoop } from '../state/useGameLoop';
 import { saveGame, loadGame, type SaveData } from '../utils/storage';
 import { INITIAL_STATE } from '../state/gameState';
 import { UPGRADES } from '../constants/gameData';
+import { applyPermanentBonuses, purchasePermanentUpgrade, type PermanentData } from '../state/permanentState';
 
 const AUTO_SAVE_INTERVAL_MS = 30_000; // 30秒ごとに自動セーブ
 
@@ -33,15 +36,21 @@ const LoadingScreen: React.FC = () => (
 
 type GameProps = {
   saveData: SaveData | null;
+  permanent: PermanentData;
+  onPermanentUpdate: (data: PermanentData) => void;
+  onGoToStart: () => void;
 };
 
-const Game: React.FC<GameProps> = ({ saveData }) => {
-  const initialState = saveData?.state ?? INITIAL_STATE;
+const Game: React.FC<GameProps> = ({ saveData, permanent, onPermanentUpdate, onGoToStart }) => {
+  const baseState    = saveData?.state ?? INITIAL_STATE;
+  const initialState = applyPermanentBonuses(baseState, permanent);
+  const [showLab, setShowLab] = useState(false);
 
   const {
     state, upgrades, damageNumbers,
     isAttacking, isHit,
     buyUpgrade, skillChoices, selectSkill, upgradeSkill,
+    isRunOver, gemsEarned, retireRun,
   } = useGameLoop({
     initialState,
     initialUpgrades: saveData?.upgrades ?? UPGRADES,
@@ -70,6 +79,29 @@ const Game: React.FC<GameProps> = ({ saveData }) => {
     return () => sub.remove();
   }, [doSave]);
 
+  // ランオーバー時にジェムを加算して保存
+  const handleRunOver = useCallback((gems: number) => {
+    const updated: PermanentData = {
+      ...permanent,
+      gems: permanent.gems + gems,
+    };
+    onPermanentUpdate(updated);
+  }, [permanent, onPermanentUpdate]);
+
+  // ランオーバー検知 → ジェム保存（一度だけ）
+  const gemsAddedRef = useRef(false);
+  useEffect(() => {
+    if (isRunOver && !gemsAddedRef.current) {
+      gemsAddedRef.current = true;
+      handleRunOver(gemsEarned);
+    }
+  }, [isRunOver, gemsEarned, handleRunOver]);
+
+  const handleLabPurchase = (upgradeId: string) => {
+    const updated = purchasePermanentUpgrade(permanent, upgradeId);
+    if (updated) onPermanentUpdate(updated);
+  };
+
   return (
     <View className="flex-1 bg-game-dark">
       <BattleField
@@ -78,6 +110,14 @@ const Game: React.FC<GameProps> = ({ saveData }) => {
         isAttacking={isAttacking}
         isHit={isHit}
       />
+
+      {/* リタイアボタン */}
+      <Pressable
+        className="absolute top-2 right-3 bg-[#1a0f2e] border border-[#4a3060] rounded-lg px-2 py-1"
+        onPress={retireRun}
+      >
+        <Text className="font-mono text-[9px] text-[#6666aa]">リタイア</Text>
+      </Pressable>
 
       <StatusPanel
         state={state}
@@ -94,6 +134,27 @@ const Game: React.FC<GameProps> = ({ saveData }) => {
         />
       )}
 
+      {/* ランオーバーモーダル */}
+      <RunOverModal
+        visible={isRunOver}
+        waveReached={state.waveNumber}
+        gemsEarned={gemsEarned}
+        onRetry={onGoToStart}
+        onGoToLab={() => {
+          setShowLab(true);
+        }}
+      />
+
+      {/* ラボモーダル（ランオーバー後から開ける） */}
+      <LabModal
+        visible={showLab}
+        permanent={permanent}
+        onPurchase={handleLabPurchase}
+        onClose={() => {
+          setShowLab(false);
+          onGoToStart();
+        }}
+      />
     </View>
   );
 };
@@ -102,7 +163,13 @@ const Game: React.FC<GameProps> = ({ saveData }) => {
 //  エントリーポイント（ロード処理）
 // ─────────────────────────────────────────
 
-export const GameScreen: React.FC = () => {
+type Props = {
+  permanent: PermanentData;
+  onPermanentUpdate: (data: PermanentData) => void;
+  onGoToStart: () => void;
+};
+
+export const GameScreen: React.FC<Props> = ({ permanent, onPermanentUpdate, onGoToStart }) => {
   const [loading, setLoading]   = useState(true);
   const [saveData, setSaveData] = useState<SaveData | null>(null);
 
@@ -115,5 +182,12 @@ export const GameScreen: React.FC = () => {
 
   if (loading) return <LoadingScreen />;
 
-  return <Game saveData={saveData} />;
+  return (
+    <Game
+      saveData={saveData}
+      permanent={permanent}
+      onPermanentUpdate={onPermanentUpdate}
+      onGoToStart={onGoToStart}
+    />
+  );
 };

@@ -39,8 +39,14 @@ export type GameState = {
   // 敵
   enemies: Enemy[];
   spawnInterval: number;
-  killCount: number;        // 現在のウェーブでの撃破数
-  nextSpawnIsBoss: boolean; // 次のスポーンがボスかどうか
+
+  // ウェーブシステム
+  waveNumber: number;          // 現在のウェーブ番号
+  waveEnemiesTotal: number;    // このウェーブの総敵数
+  waveEnemiesSpawned: number;  // 既にスポーンした敵数
+  waveEnemiesKilled: number;   // このウェーブで撃破した敵数
+  waveBreaking: boolean;       // ウェーブ間休憩中か
+  waveBreakTimer: number;      // 休憩残り時間（秒）
 
   // 弾（新規追加）
   projectiles: Projectile[];
@@ -75,8 +81,12 @@ export const INITIAL_STATE: GameState = {
   multiShotChance: 0,
   enemies: [],
   spawnInterval: 3.5,
-  killCount: 0,
-  nextSpawnIsBoss: false,
+  waveNumber: 1,
+  waveEnemiesTotal: GAME_CONFIG.WAVE_BASE_ENEMIES,
+  waveEnemiesSpawned: 0,
+  waveEnemiesKilled: 0,
+  waveBreaking: false,
+  waveBreakTimer: 0,
   projectiles: [],
   spawnTimer: 0,
   enemyAtkTimer: 0,

@@ -123,12 +123,23 @@ export const BattleField: React.FC<Props> = React.memo(({
         </Text>
       ))}
 
-      {/* ステージラベル */}
+      {/* ステージ・ウェーブラベル */}
       <Text
         className="absolute top-2 self-center font-mono text-[9px] tracking-[2px]"
         style={{ color: 'rgba(200,200,255,0.4)' }}
       >
         STAGE {stage} — LV.{state.level}
+      </Text>
+
+      {/* ウェーブ表示 */}
+      <Text
+        className="absolute top-7 self-center font-mono text-[11px] font-bold tracking-widest"
+        style={{ color: state.waveBreaking ? '#f0c040' : 'rgba(192,132,252,0.8)' }}
+      >
+        {state.waveBreaking
+          ? `WAVE ${state.waveNumber} CLEAR!  Next in ${Math.ceil(state.waveBreakTimer)}s`
+          : `WAVE ${state.waveNumber}  ${state.waveEnemiesKilled}/${state.waveEnemiesTotal}`
+        }
       </Text>
 
     </View>

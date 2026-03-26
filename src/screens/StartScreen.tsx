@@ -6,15 +6,20 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, Animated } from 'react-native';
 import { deleteSave, loadGame } from '../utils/storage';
+import { LabModal } from '../components/LabModal';
+import { purchasePermanentUpgrade, type PermanentData } from '../state/permanentState';
 
 type Props = {
+  permanent: PermanentData;
+  onPermanentUpdate: (data: PermanentData) => void;
   onStart: () => void;    // 新規ゲーム
   onContinue: () => void; // 続きから
 };
 
-export const StartScreen: React.FC<Props> = ({ onStart, onContinue }) => {
-  const [hasSave, setHasSave]   = useState(false);
-  const glowAnim                = React.useRef(new Animated.Value(0)).current;
+export const StartScreen: React.FC<Props> = ({ permanent, onPermanentUpdate, onStart, onContinue }) => {
+  const [hasSave, setHasSave]     = useState(false);
+  const [showLab, setShowLab]     = useState(false);
+  const glowAnim                  = React.useRef(new Animated.Value(0)).current;
 
   // セーブデータの有無を確認
   useEffect(() => {
@@ -35,6 +40,11 @@ export const StartScreen: React.FC<Props> = ({ onStart, onContinue }) => {
 
   const handleNewGame = () => {
     deleteSave().then(onStart);
+  };
+
+  const handleLabPurchase = (upgradeId: string) => {
+    const updated = purchasePermanentUpgrade(permanent, upgradeId);
+    if (updated) onPermanentUpdate(updated);
   };
 
   return (
@@ -89,12 +99,36 @@ export const StartScreen: React.FC<Props> = ({ onStart, onContinue }) => {
             はじめる
           </Text>
         </Pressable>
+
+        {/* ラボボタン */}
+        <Pressable
+          className="rounded-xl py-3.5 items-center border border-[#2a2a4a] flex-row justify-center gap-2"
+          style={{ backgroundColor: '#07071a' }}
+          onPress={() => setShowLab(true)}
+        >
+          <Text className="font-bold text-sm tracking-widest" style={{ color: '#9f67ff' }}>
+            🔬 ラボ
+          </Text>
+          {permanent.gems > 0 && (
+            <View className="bg-[#1a0f2e] border border-[#4a3060] rounded-full px-2 py-0.5">
+              <Text className="font-mono text-[9px] text-yellow-300">💎 {permanent.gems}</Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       {/* フッター */}
       <Text className="absolute bottom-8 font-mono text-[9px] tracking-[2px]" style={{ color: 'rgba(100,80,150,0.4)' }}>
         v1.0.0
       </Text>
+
+      {/* ラボモーダル */}
+      <LabModal
+        visible={showLab}
+        permanent={permanent}
+        onPurchase={handleLabPurchase}
+        onClose={() => setShowLab(false)}
+      />
 
     </View>
   );
