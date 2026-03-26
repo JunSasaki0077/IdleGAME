@@ -30,6 +30,12 @@ export type GameState = {
   skillPoints: number;
   pendingSkillChoice: boolean;
 
+  // 戦闘パッシブ
+  critChance: number;       // クリティカル確率（0.0〜1.0）
+  critMultiplier: number;   // クリティカル時のダメージ倍率
+  thornDamage: number;      // ダメージを受けた時の反射ダメージ
+  multiShotChance: number;  // 連射確率（0.0〜1.0）
+
   // 敵
   enemies: Enemy[];
   spawnInterval: number;
@@ -63,6 +69,10 @@ export const INITIAL_STATE: GameState = {
   acquiredSkills: [],
   skillPoints: 0,
   pendingSkillChoice: false,
+  critChance: 0,
+  critMultiplier: GAME_CONFIG.CRITICAL_HIT_MULTIPLIER,
+  thornDamage: 0,
+  multiShotChance: 0,
   enemies: [],
   spawnInterval: 3.5,
   killCount: 0,
@@ -86,11 +96,18 @@ export function getCurrentClass(level: number): CharacterClass {
 /** 近接攻撃IDの定数（マジックストリング防止） */
 export const MELEE_ATTACK_ID = '__melee__' as const;
 
-/** ダメージ計算（分散付き） */
-export function calcAttackDamage(atk: number, atkMultiplier: number): number {
+/** ダメージ計算（分散・クリティカル付き） */
+export function calcAttackDamage(
+  atk: number,
+  atkMultiplier: number,
+  critChance = 0,
+  critMultiplier = 1,
+): { damage: number; isCrit: boolean } {
   const variance = GAME_CONFIG.DAMAGE_VARIANCE_MIN +
     Math.random() * (GAME_CONFIG.DAMAGE_VARIANCE_MAX - GAME_CONFIG.DAMAGE_VARIANCE_MIN);
-  return Math.floor(atk * atkMultiplier * variance);
+  const isCrit = Math.random() < critChance;
+  const damage = Math.floor(atk * atkMultiplier * variance * (isCrit ? critMultiplier : 1));
+  return { damage, isCrit };
 }
 
 /** 最も近い（X座標が最小の）敵を返す */

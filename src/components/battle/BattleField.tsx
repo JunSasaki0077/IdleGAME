@@ -5,6 +5,39 @@
 
 import React, { useMemo } from 'react';
 import { View, Text } from 'react-native';
+
+// 背景の木（位置固定・再レンダリングなし）
+const TREES = [
+  { left: '5%',  size: 28, opacity: 0.5 },
+  { left: '14%', size: 22, opacity: 0.35 },
+  { left: '30%', size: 30, opacity: 0.45 },
+  { left: '42%', size: 20, opacity: 0.3 },
+  { left: '55%', size: 26, opacity: 0.5 },
+  { left: '65%', size: 32, opacity: 0.4 },
+  { left: '75%', size: 22, opacity: 0.35 },
+  { left: '83%', size: 28, opacity: 0.45 },
+  { left: '91%', size: 24, opacity: 0.3 },
+] as const;
+
+const ForestBackground = React.memo(() => (
+  <>
+    {TREES.map((tree, i) => (
+      <Text
+        key={i}
+        style={{
+          position: 'absolute',
+          bottom: '45%',
+          left: tree.left,
+          fontSize: tree.size,
+          opacity: tree.opacity,
+          lineHeight: tree.size,
+        }}
+      >
+        🌲
+      </Text>
+    ))}
+  </>
+));
 import { Hero, type HeroAnim } from './Hero';
 import { EnemySprite } from './EnemySprite';
 import { ProjectileSprite } from './ProjectileSprite';
@@ -55,6 +88,9 @@ export const BattleField: React.FC<Props> = React.memo(({
 
       {/* 地面 */}
       <View className="absolute bottom-0 left-0 right-0 h-[45%] bg-[#1e3510] border-t-[3px] border-[#4a7a2e]" />
+
+      {/* 森 */}
+      <ForestBackground />
 
       {/* 主人公（PNG ドット絵） */}
       <Hero anim={heroAnim} size={160} />

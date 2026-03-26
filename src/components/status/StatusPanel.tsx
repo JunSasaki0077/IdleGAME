@@ -20,9 +20,10 @@ type Props = {
   state: GameState;
   upgrades: Upgrade[];
   onBuy: (id: string) => void;
+  onUpgradeSkill: (skillDefId: string) => void;
 };
 
-export const StatusPanel: React.FC<Props> = ({ state, upgrades, onBuy }) => {
+export const StatusPanel: React.FC<Props> = ({ state, upgrades, onBuy, onUpgradeSkill }) => {
   const [tab, setTab] = useState<Tab>('upgrade');
   const currentClass = getCurrentClass(state.level);
 
@@ -88,7 +89,7 @@ export const StatusPanel: React.FC<Props> = ({ state, upgrades, onBuy }) => {
       {tab === 'upgrade' ? (
         <UpgradeList upgrades={upgrades} gold={state.gold} onBuy={onBuy} />
       ) : (
-        <AcquiredSkillList acquiredSkills={state.acquiredSkills} />
+        <AcquiredSkillList acquiredSkills={state.acquiredSkills} skillPoints={state.skillPoints} onUpgrade={onUpgradeSkill} />
       )}
 
     </View>

@@ -50,9 +50,14 @@ export type GameLoopResult = {
 //  カスタムフック
 // ─────────────────────────────────────────
 
-export function useGameLoop(): GameLoopResult {
-  const [state, setState]                 = useState<GameState>(INITIAL_STATE);
-  const [upgrades, setUpgrades]           = useState<Upgrade[]>(UPGRADES);
+type GameLoopOptions = {
+  initialState?: GameState;
+  initialUpgrades?: Upgrade[];
+};
+
+export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
+  const [state, setState]                 = useState<GameState>(options.initialState ?? INITIAL_STATE);
+  const [upgrades, setUpgrades]           = useState<Upgrade[]>(options.initialUpgrades ?? UPGRADES);
   const [damageNumbers, setDamageNumbers] = useState<DamageNumber[]>([]);
   const [isAttacking, setIsAttacking]     = useState(false);
   const [isHit, setIsHit]                 = useState(false);
@@ -191,13 +196,15 @@ export function useGameLoop(): GameLoopResult {
 
           if (timer >= atkInterval && s.enemies.length > 0) {
             didAnyAttack = true;
-            const baseDmg = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1);
-            newProjs.push(createProjectile(
-              'orb',
-              GAME_CONFIG.HERO_POSITION_X + 5,
-              GAME_CONFIG.PROJ_Y,
-              baseDmg,
-            ));
+            const { damage: baseDmg, isCrit } = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1, s.critChance, s.critMultiplier);
+            if (isCrit) effects.push(() => spawnDamageNumber('CRIT!', GAME_CONFIG.HERO_POSITION_X + 5, 15, '#fbbf24'));
+            newProjs.push(createProjectile('orb', GAME_CONFIG.HERO_POSITION_X + 5, GAME_CONFIG.PROJ_Y, baseDmg));
+            // 連射判定
+            if (Math.random() < s.multiShotChance) {
+              const { damage: bonusDmg, isCrit: bonusCrit } = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1, s.critChance, s.critMultiplier);
+              if (bonusCrit) effects.push(() => spawnDamageNumber('CRIT!', GAME_CONFIG.HERO_POSITION_X + 5, 10, '#fbbf24'));
+              newProjs.push(createProjectile('orb', GAME_CONFIG.HERO_POSITION_X + 5, GAME_CONFIG.PROJ_Y + 5, bonusDmg));
+            }
           }
           s = {
             ...s,
@@ -214,14 +221,16 @@ export function useGameLoop(): GameLoopResult {
             if (timer >= atkInterval && s.enemies.length > 0) {
               newSkillTimers[timerId] = 0;
               didAnyAttack = true;
-              const baseDmg = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1);
+              const { damage: baseDmg, isCrit } = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1, s.critChance, s.critMultiplier);
+              if (isCrit) effects.push(() => spawnDamageNumber('CRIT!', GAME_CONFIG.HERO_POSITION_X + 5, 15, '#fbbf24'));
               const kind = SKILL_TO_PROJECTILE[acquired.defId] ?? 'fireball';
-              newProjs.push(createProjectile(
-                kind,
-                GAME_CONFIG.HERO_POSITION_X + 5,
-                GAME_CONFIG.PROJ_Y + i * 6,
-                baseDmg,
-              ));
+              newProjs.push(createProjectile(kind, GAME_CONFIG.HERO_POSITION_X + 5, GAME_CONFIG.PROJ_Y + i * 6, baseDmg));
+              // 連射判定
+              if (Math.random() < s.multiShotChance) {
+                const { damage: bonusDmg, isCrit: bonusCrit } = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1, s.critChance, s.critMultiplier);
+                if (bonusCrit) effects.push(() => spawnDamageNumber('CRIT!', GAME_CONFIG.HERO_POSITION_X + 5, 10, '#fbbf24'));
+                newProjs.push(createProjectile(kind, GAME_CONFIG.HERO_POSITION_X + 5, GAME_CONFIG.PROJ_Y + i * 6 + 5, bonusDmg));
+              }
             } else {
               newSkillTimers[timerId] = timer;
             }
@@ -306,6 +315,20 @@ export function useGameLoop(): GameLoopResult {
             effects.push(() => spawnDamageNumber(`-${totalDmg}`, GAME_CONFIG.HERO_POSITION_X, 25, '#ff4444'));
             effects.push(() => triggerHit());
             s = { ...s, hp: newHp };
+
+            // ── トゲ反射ダメージ ──
+            if (s.thornDamage > 0) {
+              effects.push(() => spawnDamageNumber(`🌵-${s.thornDamage}`, GAME_CONFIG.HERO_POSITION_X + 10, 35, '#4ade80'));
+              s = {
+                ...s,
+                enemies: s.enemies.map((e) =>
+                  attackingEnemies.some((ae) => ae.id === e.id)
+                    ? { ...e, hp: e.hp - s.thornDamage }
+                    : e
+                ).filter((e) => e.hp > 0),
+              };
+            }
+
             if (newHp <= 0) {
               s = { ...s, hp: s.maxHp, enemies: [], projectiles: [] };
               effects.push(() => spawnDamageNumber('💀 REVIVE!', GAME_CONFIG.HERO_POSITION_X, 15, '#c084fc'));

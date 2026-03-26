@@ -4,16 +4,28 @@
 // ============================================================
 
 import './global.css';
-import React from 'react';
+import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { GameScreen } from './src/screens/GameScreen';
+import { StartScreen } from './src/screens/StartScreen';
+
+type Screen = 'start' | 'game';
 
 export default function App() {
+  const [screen, setScreen] = useState<Screen>('start');
+
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar style="light" />
-      <GameScreen />
+      {screen === 'start' ? (
+        <StartScreen
+          onStart={() => setScreen('game')}
+          onContinue={() => setScreen('game')}
+        />
+      ) : (
+        <GameScreen />
+      )}
     </SafeAreaView>
   );
 }
