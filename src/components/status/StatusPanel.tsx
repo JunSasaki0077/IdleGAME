@@ -23,7 +23,7 @@ type Props = {
   onUpgradeSkill: (skillDefId: string) => void;
 };
 
-export const StatusPanel: React.FC<Props> = ({ state, upgrades, onBuy, onUpgradeSkill }) => {
+export const StatusPanel: React.FC<Props> = React.memo(({ state, upgrades, onBuy, onUpgradeSkill }) => {
   const [tab, setTab] = useState<Tab>('upgrade');
   const currentClass = getCurrentClass(state.level);
 
@@ -94,4 +94,4 @@ export const StatusPanel: React.FC<Props> = ({ state, upgrades, onBuy, onUpgrade
 
     </View>
   );
-};
+});

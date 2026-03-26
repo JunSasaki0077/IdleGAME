@@ -136,16 +136,9 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
 
   // ─── リタイア（手動でランを終了） ───
   const retireRun = useCallback(() => {
-    setGemsEarned((prev) => {
-      // すでに計算済みなら上書きしない
-      if (prev > 0) return prev;
-      return 0; // stateから正確な値を取得するためsetState後に再計算
-    });
-    setState((prev) => {
-      const earned = prev.waveNumber * GAME_CONFIG.GEMS_PER_WAVE;
-      setGemsEarned(earned);
-      return prev;
-    });
+    // stateRef.current は常に最新値を持つ（useEffect で同期済み）
+    const earned = stateRef.current.waveNumber * GAME_CONFIG.GEMS_PER_WAVE;
+    setGemsEarned(earned);
     setIsRunOver(true);
   }, []);
 
@@ -226,64 +219,47 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
         };
 
         // ── 主人公の攻撃 ──
-        const atkInterval = 1 / s.atkSpeed;
+        // デフォルト攻撃とスキル攻撃を統一フォーマットで処理する
+        const atkInterval    = 1 / s.atkSpeed;
         const newSkillTimers = { ...s.skillTimers };
         const newProjs: Projectile[] = [];
         let didAnyAttack = false;
+        const atkMult = skillFx.atkMultiplier ?? 1;
 
-        if (s.acquiredSkills.length === 0) {
-          // デフォルト：白い玉の遠距離攻撃（敵がいれば即時発射）
-          const timer = (newSkillTimers[MELEE_ATTACK_ID] ?? 0) + dt;
-          newSkillTimers[MELEE_ATTACK_ID] = timer >= atkInterval ? 0 : timer;
+        // 攻撃スロット: スキルなし → デフォルト(orb)、スキルあり → スキルごと
+        const attackSlots: Array<{ timerId: string; kind: Projectile['kind']; yOffset: number }> =
+          s.acquiredSkills.length === 0
+            ? [{ timerId: MELEE_ATTACK_ID, kind: 'orb', yOffset: 0 }]
+            : s.acquiredSkills.map((sk, i) => ({
+                timerId: sk.defId,
+                kind:    SKILL_TO_PROJECTILE[sk.defId] ?? 'fireball',
+                yOffset: i * 6,
+              }));
 
+        for (const slot of attackSlots) {
+          const timer = (newSkillTimers[slot.timerId] ?? 0) + dt;
           if (timer >= atkInterval && s.enemies.length > 0) {
+            newSkillTimers[slot.timerId] = 0;
             didAnyAttack = true;
-            const { damage: baseDmg, isCrit } = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1, s.critChance, s.critMultiplier);
+            const { damage, isCrit } = calcAttackDamage(s.atk, atkMult, s.critChance, s.critMultiplier);
             if (isCrit) effects.push(() => spawnDamageNumber('CRIT!', GAME_CONFIG.HERO_POSITION_X + 5, 15, '#fbbf24'));
-            newProjs.push(createProjectile('orb', GAME_CONFIG.HERO_POSITION_X + 5, GAME_CONFIG.PROJ_Y, baseDmg));
+            newProjs.push(createProjectile(slot.kind, GAME_CONFIG.HERO_POSITION_X + 5, GAME_CONFIG.PROJ_Y + slot.yOffset, damage));
             // 連射判定
             if (Math.random() < s.multiShotChance) {
-              const { damage: bonusDmg, isCrit: bonusCrit } = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1, s.critChance, s.critMultiplier);
+              const { damage: bonusDmg, isCrit: bonusCrit } = calcAttackDamage(s.atk, atkMult, s.critChance, s.critMultiplier);
               if (bonusCrit) effects.push(() => spawnDamageNumber('CRIT!', GAME_CONFIG.HERO_POSITION_X + 5, 10, '#fbbf24'));
-              newProjs.push(createProjectile('orb', GAME_CONFIG.HERO_POSITION_X + 5, GAME_CONFIG.PROJ_Y + 5, bonusDmg));
+              newProjs.push(createProjectile(slot.kind, GAME_CONFIG.HERO_POSITION_X + 5, GAME_CONFIG.PROJ_Y + slot.yOffset + 5, bonusDmg));
             }
+          } else {
+            newSkillTimers[slot.timerId] = timer;
           }
-          s = {
-            ...s,
-            skillTimers: newSkillTimers,
-            projectiles: didAnyAttack ? [...s.projectiles, ...newProjs] : s.projectiles,
-          };
-        } else {
-          // スキルごとの遠距離攻撃（projectile発射）
-          for (let i = 0; i < s.acquiredSkills.length; i++) {
-            const acquired = s.acquiredSkills[i];
-            const timerId = acquired.defId;
-            const timer = (newSkillTimers[timerId] ?? 0) + dt;
-
-            if (timer >= atkInterval && s.enemies.length > 0) {
-              newSkillTimers[timerId] = 0;
-              didAnyAttack = true;
-              const { damage: baseDmg, isCrit } = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1, s.critChance, s.critMultiplier);
-              if (isCrit) effects.push(() => spawnDamageNumber('CRIT!', GAME_CONFIG.HERO_POSITION_X + 5, 15, '#fbbf24'));
-              const kind = SKILL_TO_PROJECTILE[acquired.defId] ?? 'fireball';
-              newProjs.push(createProjectile(kind, GAME_CONFIG.HERO_POSITION_X + 5, GAME_CONFIG.PROJ_Y + i * 6, baseDmg));
-              // 連射判定
-              if (Math.random() < s.multiShotChance) {
-                const { damage: bonusDmg, isCrit: bonusCrit } = calcAttackDamage(s.atk, skillFx.atkMultiplier ?? 1, s.critChance, s.critMultiplier);
-                if (bonusCrit) effects.push(() => spawnDamageNumber('CRIT!', GAME_CONFIG.HERO_POSITION_X + 5, 10, '#fbbf24'));
-                newProjs.push(createProjectile(kind, GAME_CONFIG.HERO_POSITION_X + 5, GAME_CONFIG.PROJ_Y + i * 6 + 5, bonusDmg));
-              }
-            } else {
-              newSkillTimers[timerId] = timer;
-            }
-          }
-
-          s = {
-            ...s,
-            skillTimers: newSkillTimers,
-            projectiles: didAnyAttack ? [...s.projectiles, ...newProjs] : s.projectiles,
-          };
         }
+
+        s = {
+          ...s,
+          skillTimers: newSkillTimers,
+          projectiles: didAnyAttack ? [...s.projectiles, ...newProjs] : s.projectiles,
+        };
 
         if (didAnyAttack) effects.push(() => triggerAttack());
 

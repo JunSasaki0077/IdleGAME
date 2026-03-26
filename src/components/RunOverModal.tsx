@@ -14,7 +14,7 @@ type Props = {
   onGoToLab: () => void;
 };
 
-export const RunOverModal: React.FC<Props> = ({ visible, waveReached, gemsEarned, onRetry, onGoToLab }) => (
+export const RunOverModal: React.FC<Props> = React.memo(({ visible, waveReached, gemsEarned, onRetry, onGoToLab }) => (
   <Modal visible={visible} transparent animationType="fade">
     <View className="flex-1 bg-black/75 items-center justify-center px-6">
       <View
@@ -59,4 +59,4 @@ export const RunOverModal: React.FC<Props> = ({ visible, waveReached, gemsEarned
       </View>
     </View>
   </Modal>
-);
+));

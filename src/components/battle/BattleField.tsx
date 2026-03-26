@@ -3,7 +3,7 @@
 //  Hero に HeroAnim を渡してアニメーションを切り替える
 // ============================================================
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text } from 'react-native';
 
 // 背景の木（位置固定・再レンダリングなし）
@@ -68,11 +68,9 @@ export const BattleField: React.FC<Props> = React.memo(({
 }) => {
   const stage = Math.min(Math.floor(state.level / GAME_CONFIG.STAGE_LEVEL_DIVISOR) + 1, GAME_CONFIG.MAX_STAGE);
 
-  const isInMeleeRange = useMemo(() =>
+  const isInMeleeRange =
     state.acquiredSkills.length === 0 &&
-    state.enemies.some((e) => e.x <= STOP_X + GAME_CONFIG.ATTACK_RANGE),
-    [state.enemies, state.acquiredSkills.length],
-  );
+    state.enemies.some((e) => e.x <= STOP_X + GAME_CONFIG.ATTACK_RANGE);
 
   const heroAnim: HeroAnim =
     isHit                       ? 'damage' :

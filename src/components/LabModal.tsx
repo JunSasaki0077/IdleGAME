@@ -14,7 +14,7 @@ type Props = {
   onClose: () => void;
 };
 
-export const LabModal: React.FC<Props> = ({ visible, permanent, onPurchase, onClose }) => (
+export const LabModal: React.FC<Props> = React.memo(({ visible, permanent, onPurchase, onClose }) => (
   <Modal visible={visible} transparent animationType="slide">
     <View className="flex-1 bg-black/80 justify-end">
       <View
@@ -87,4 +87,4 @@ export const LabModal: React.FC<Props> = ({ visible, permanent, onPurchase, onCl
       </View>
     </View>
   </Modal>
-);
+));

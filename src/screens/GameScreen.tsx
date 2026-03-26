@@ -79,23 +79,21 @@ const Game: React.FC<GameProps> = ({ saveData, permanent, onPermanentUpdate, onG
     return () => sub.remove();
   }, [doSave]);
 
-  // ランオーバー時にジェムを加算して保存
-  const handleRunOver = useCallback((gems: number) => {
-    const updated: PermanentData = {
-      ...permanent,
-      gems: permanent.gems + gems,
-    };
-    onPermanentUpdate(updated);
-  }, [permanent, onPermanentUpdate]);
-
   // ランオーバー検知 → ジェム保存（一度だけ）
+  // permanentRef で最新の permanent を参照しつつ、gemsAdded フラグで二重加算を防ぐ
+  const permanentRef = useRef(permanent);
   const gemsAddedRef = useRef(false);
+  useEffect(() => { permanentRef.current = permanent; }, [permanent]);
   useEffect(() => {
     if (isRunOver && !gemsAddedRef.current) {
       gemsAddedRef.current = true;
-      handleRunOver(gemsEarned);
+      const updated: PermanentData = {
+        ...permanentRef.current,
+        gems: permanentRef.current.gems + gemsEarned,
+      };
+      onPermanentUpdate(updated);
     }
-  }, [isRunOver, gemsEarned, handleRunOver]);
+  }, [isRunOver, gemsEarned, onPermanentUpdate]);
 
   const handleLabPurchase = (upgradeId: string) => {
     const updated = purchasePermanentUpgrade(permanent, upgradeId);
