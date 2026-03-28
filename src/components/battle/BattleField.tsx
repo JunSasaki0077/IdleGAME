@@ -1,10 +1,17 @@
 // ============================================================
 //  components/battle/BattleField.tsx
-//  Hero に HeroAnim を渡してアニメーションを切り替える
+//  ウェーブクリアバナー対応
 // ============================================================
 
 import React from 'react';
 import { View, Text } from 'react-native';
+import { Hero, type HeroAnim } from './Hero';
+import { EnemySprite } from './EnemySprite';
+import { ProjectileSprite } from './ProjectileSprite';
+import { WaveClearBanner } from './WaveClearBanner';
+import { GAME_CONFIG, STOP_X } from '../../constants/gameConfig';
+import type { GameState } from '../../state/gameState';
+import type { DamageNumber } from '../../types/gameTypes';
 
 // 背景の木（位置固定・再レンダリングなし）
 const TREES = [
@@ -25,11 +32,11 @@ const ForestBackground = React.memo(() => (
       <Text
         key={i}
         style={{
-          position: 'absolute',
-          bottom: '45%',
-          left: tree.left,
-          fontSize: tree.size,
-          opacity: tree.opacity,
+          position:   'absolute',
+          bottom:     '45%',
+          left:       tree.left,
+          fontSize:   tree.size,
+          opacity:    tree.opacity,
           lineHeight: tree.size,
         }}
       >
@@ -38,12 +45,6 @@ const ForestBackground = React.memo(() => (
     ))}
   </>
 ));
-import { Hero, type HeroAnim } from './Hero';
-import { EnemySprite } from './EnemySprite';
-import { ProjectileSprite } from './ProjectileSprite';
-import { GAME_CONFIG, STOP_X } from '../../constants/gameConfig';
-import type { GameState } from '../../state/gameState';
-import type { DamageNumber } from '../../types/gameTypes';
 
 // ─────────────────────────────────────────
 //  Props
@@ -73,10 +74,13 @@ export const BattleField: React.FC<Props> = React.memo(({
     state.enemies.some((e) => e.x <= STOP_X + GAME_CONFIG.ATTACK_RANGE);
 
   const heroAnim: HeroAnim =
-    isHit                       ? 'damage' :
+    isHit                         ? 'damage' :
     isInMeleeRange || isAttacking ? 'attack' :
-    state.enemies.length > 0    ? 'walk' :
+    state.enemies.length > 0      ? 'walk' :
     'idle';
+
+  // クリアしたのが5の倍数ウェーブか（ボス撃破判定）
+  const isBossWave = state.waveNumber % GAME_CONFIG.BOSS_WAVE_INTERVAL === 0;
 
   return (
     <View className="flex-[0.58] bg-[#0a0a1f] overflow-hidden relative border-b-[3px] border-[#111]">
@@ -90,7 +94,7 @@ export const BattleField: React.FC<Props> = React.memo(({
       {/* 森 */}
       <ForestBackground />
 
-      {/* 主人公（PNG ドット絵） */}
+      {/* 主人公 */}
       <Hero anim={heroAnim} size={160} />
 
       {/* 敵一覧 */}
@@ -109,9 +113,9 @@ export const BattleField: React.FC<Props> = React.memo(({
           key={d.id}
           className="absolute z-[30] font-mono text-[13px] font-bold"
           style={{
-            left:  `${d.x}%`,
-            top:   `${d.y}%`,
-            color: d.color,
+            left:             `${d.x}%`,
+            top:              `${d.y}%`,
+            color:            d.color,
             textShadowColor:  '#000',
             textShadowOffset: { width: 1, height: 1 },
             textShadowRadius: 2,
@@ -121,7 +125,7 @@ export const BattleField: React.FC<Props> = React.memo(({
         </Text>
       ))}
 
-      {/* ステージ・ウェーブラベル */}
+      {/* ステージラベル */}
       <Text
         className="absolute top-2 self-center font-mono text-[9px] tracking-[2px]"
         style={{ color: 'rgba(200,200,255,0.4)' }}
@@ -129,16 +133,23 @@ export const BattleField: React.FC<Props> = React.memo(({
         STAGE {stage} — LV.{state.level}
       </Text>
 
-      {/* ウェーブ表示 */}
-      <Text
-        className="absolute top-7 self-center font-mono text-[11px] font-bold tracking-widest"
-        style={{ color: state.waveBreaking ? '#f0c040' : 'rgba(192,132,252,0.8)' }}
-      >
-        {state.waveBreaking
-          ? `WAVE ${state.waveNumber} CLEAR!  Next in ${Math.ceil(state.waveBreakTimer)}s`
-          : `WAVE ${state.waveNumber}  ${state.waveEnemiesKilled}/${state.waveEnemiesTotal}`
-        }
-      </Text>
+      {/* 通常時のウェーブ進捗ラベル（クリア時は非表示） */}
+      {!state.waveBreaking && (
+        <Text
+          className="absolute top-7 self-center font-mono text-[11px] font-bold tracking-widest"
+          style={{ color: 'rgba(192,132,252,0.8)' }}
+        >
+          {`WAVE ${state.waveNumber}  ${state.waveEnemiesKilled}/${state.waveEnemiesTotal}`}
+        </Text>
+      )}
+
+      {/* ウェーブクリアバナー（Reanimated + Haptics） */}
+      <WaveClearBanner
+        waveBreaking={state.waveBreaking}
+        waveNumber={state.waveNumber}
+        waveBreakTimer={state.waveBreakTimer}
+        isBossWave={isBossWave}
+      />
 
     </View>
   );
