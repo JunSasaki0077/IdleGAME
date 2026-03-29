@@ -68,7 +68,7 @@ export const INITIAL_STATE: GameState = {
   maxXp: 100,
   hp: 100,
   maxHp: 100,
-  atk: 1,
+  atk: 10,
   atkSpeed: 1.2,
   goldPerSec: 0,
   xpPerSec: 0,

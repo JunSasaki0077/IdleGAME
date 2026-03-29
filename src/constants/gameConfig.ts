@@ -38,11 +38,11 @@ export const GAME_CONFIG = {
 
   // レベルアップ設定
   XP_MULTIPLIER: 1.55,            // レベルアップ時のXP必要量倍率
-  LEVEL_UP_ATK_BONUS: 2,          // レベルアップ時の攻撃力ボーナス
-  LEVEL_UP_HP_BONUS: 10,          // レベルアップ時のHP最大値ボーナス
+  LEVEL_UP_ATK_BONUS: 3,          // レベルアップ時の攻撃力ボーナス
+  LEVEL_UP_HP_BONUS: 25,          // レベルアップ時のHP最大値ボーナス
 
   // 敵のスケーリング
-  ENEMY_TIER_LEVEL_DIVISOR: 4,    // レベル÷この値で敵のTierを決定
+  ENEMY_TIER_LEVEL_DIVISOR: 8,    // レベル÷この値で敵のTierを決定
   ENEMY_HP_SCALE_PER_LEVEL: 0.08, // レベルごとの敵HP増加率
   ENEMY_GOLD_SCALE_PER_LEVEL: 0.1,// レベルごとの敵Gold増加率
   ENEMY_XP_SCALE_PER_LEVEL: 0.05, // レベルごとの敵XP増加率
@@ -69,6 +69,7 @@ export const GAME_CONFIG = {
   // ウェーブシステム
   WAVE_BASE_ENEMIES: 8,           // Wave 1の敵数
   WAVE_ENEMIES_PER_WAVE: 2,       // ウェーブごとの追加敵数
+  WAVE_MAX_ENEMIES: 20,           // ウェーブあたりの最大敵数
   WAVE_BREAK_DURATION: 3.0,       // ウェーブ間の休憩時間（秒）
   BOSS_WAVE_INTERVAL: 5,          // ボスが出現するウェーブ間隔（5の倍数）
 

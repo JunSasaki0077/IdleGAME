@@ -3,11 +3,11 @@
 //  汎用フォーマット関数
 // ============================================================
 
-/** 数値を見やすい文字列に変換（例: 1500 → "1.5K"） */
+/** 数値を見やすい文字列に変換（例: 1500 → "1.5k"） */
 export function formatNumber(n: number): string {
   const floored = Math.floor(n);
-  if (floored >= 1_000_000) return (floored / 1_000_000).toFixed(1) + 'M';
-  if (floored >= 1_000)     return (floored / 1_000).toFixed(1) + 'K';
+  if (floored >= 1_000_000) return (floored / 1_000_000).toFixed(1) + 'm';
+  if (floored >= 1_000)     return (floored / 1_000).toFixed(1) + 'k';
   return floored.toString();
 }
 
