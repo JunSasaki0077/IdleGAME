@@ -79,7 +79,7 @@ export const EnemySprite: React.FC<Props> = React.memo(({ enemy }) => {
 
   return (
     <View
-      className="absolute bottom-[45%] items-center z-[9]"
+      className="absolute bottom-[10%] items-center z-[9]"
       style={{ left: `${enemy.x}%`, transform: [{ translateX: -spriteSize / 2 }] }}
     >
       {/* ボスマーク */}

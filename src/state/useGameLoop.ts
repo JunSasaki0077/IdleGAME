@@ -180,6 +180,10 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
           const remaining = s.waveBreakTimer - dt;
           if (remaining <= 0) {
             const nextWave = s.waveNumber + 1;
+            const nextSpawnInterval = Math.max(
+              GAME_CONFIG.SPAWN_INTERVAL_BASE - (nextWave - 1) * GAME_CONFIG.SPAWN_INTERVAL_PER_WAVE,
+              GAME_CONFIG.SPAWN_INTERVAL_MIN,
+            );
             s = {
               ...s,
               waveBreaking: false,
@@ -188,7 +192,8 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
               waveEnemiesTotal: Math.min(GAME_CONFIG.WAVE_BASE_ENEMIES + (nextWave - 1) * GAME_CONFIG.WAVE_ENEMIES_PER_WAVE, GAME_CONFIG.WAVE_MAX_ENEMIES),
               waveEnemiesSpawned: 0,
               waveEnemiesKilled: 0,
-              spawnTimer: s.spawnInterval, // 即座に最初の敵をスポーン
+              spawnInterval: nextSpawnInterval,
+              spawnTimer: nextSpawnInterval, // 即座に最初の敵をスポーン
             };
           } else {
             s = { ...s, waveBreakTimer: remaining };

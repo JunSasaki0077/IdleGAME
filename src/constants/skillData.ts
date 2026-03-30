@@ -12,7 +12,7 @@ export const SKILL_DEFS: SkillDef[] = [
     icon: '🔥',
     desc: '炎の弾を発射。攻撃力が上昇する',
     maxLv: 5,
-    getEffect: (lv) => ({ atkMultiplier: 1 + lv * 0.2 }),
+    getEffect: (lv) => ({ atkMultiplier: 1 + lv * 0.12 }),
   },
   {
     id: 'thunder',

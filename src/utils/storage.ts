@@ -5,6 +5,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { INITIAL_STATE, type GameState } from '../state/gameState';
+import { GAME_CONFIG } from '../constants/gameConfig';
 import { UPGRADES } from '../constants/gameData';
 import { INITIAL_PERMANENT, type PermanentData } from '../state/permanentState';
 import type { Upgrade } from '../types/gameTypes';
@@ -40,7 +41,18 @@ export async function loadGame(): Promise<SaveData | null> {
     if (!raw) return null;
     const data = JSON.parse(raw) as SaveData;
     // 旧バージョンのセーブに存在しないフィールドをデフォルト値で補完
-    data.state = { ...INITIAL_STATE, ...data.state, enemies: [], projectiles: [] };
+    // ロード時に一時状態をリセット（バージョン変更による不整合を防ぐ）
+    data.state = {
+      ...INITIAL_STATE,
+      ...data.state,
+      enemies:          [],
+      projectiles:      [],
+      waveBreaking:       false,
+      waveBreakTimer:     0,
+      pendingSkillChoice: false,
+      skillTimers:        {},
+      spawnInterval:      GAME_CONFIG.SPAWN_INTERVAL_BASE,
+    };
     data.upgrades = mergeUpgrades(data.upgrades);
     return data;
   } catch {

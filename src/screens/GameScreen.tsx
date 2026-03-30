@@ -8,7 +8,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'; // esli
 import { View, Text, Pressable, AppState, type AppStateStatus } from 'react-native';
 import { BattleField } from '../components/battle/BattleField';
 import { StatusPanel } from '../components/status/StatusPanel';
-import { SkillSelectModal } from '../components/SkillSelectModal';
+import { SkillSelectPanel } from '../components/SkillSelectPanel';
 import { RunOverModal } from '../components/RunOverModal';
 import { LabModal } from '../components/LabModal';
 import { useGameLoop } from '../state/useGameLoop';
@@ -125,7 +125,7 @@ const Game: React.FC<GameProps> = ({ saveData, permanent, onPermanentUpdate, onG
       />
 
       {skillChoices.length > 0 && (
-        <SkillSelectModal
+        <SkillSelectPanel
           choices={skillChoices}
           acquiredIds={state.acquiredSkills.map((s) => s.defId)}
           onSelect={selectSkill}
