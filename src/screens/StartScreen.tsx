@@ -47,6 +47,10 @@ export const StartScreen: React.FC<Props> = ({ permanent, onPermanentUpdate, onS
     if (updated) onPermanentUpdate(updated);
   };
 
+  const handleSelectStage = (stageId: number) => {
+    onPermanentUpdate({ ...permanent, currentStage: stageId });
+  };
+
   return (
     <View className="flex-1 bg-[#07071a] items-center justify-center gap-0">
 
@@ -127,6 +131,7 @@ export const StartScreen: React.FC<Props> = ({ permanent, onPermanentUpdate, onS
         visible={showLab}
         permanent={permanent}
         onPurchase={handleLabPurchase}
+        onSelectStage={handleSelectStage}
         onClose={() => setShowLab(false)}
       />
 

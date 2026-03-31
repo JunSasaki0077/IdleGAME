@@ -15,7 +15,7 @@ import { useGameLoop } from '../state/useGameLoop';
 import { saveGame, loadGame, type SaveData } from '../utils/storage';
 import { INITIAL_STATE } from '../state/gameState';
 import { UPGRADES } from '../constants/gameData';
-import { applyPermanentBonuses, purchasePermanentUpgrade, type PermanentData } from '../state/permanentState';
+import { applyPermanentBonuses, purchasePermanentUpgrade, STAGE_DEFS, type PermanentData } from '../state/permanentState';
 
 const AUTO_SAVE_INTERVAL_MS = 30_000; // 30秒ごとに自動セーブ
 
@@ -54,6 +54,7 @@ const Game: React.FC<GameProps> = ({ saveData, permanent, onPermanentUpdate, onG
   } = useGameLoop({
     initialState,
     initialUpgrades: saveData?.upgrades ?? UPGRADES,
+    stage: permanent.currentStage,
   });
 
   const stateRef    = useRef(state);
@@ -84,12 +85,23 @@ const Game: React.FC<GameProps> = ({ saveData, permanent, onPermanentUpdate, onG
   const permanentRef = useRef(permanent);
   const gemsAddedRef = useRef(false);
   useEffect(() => { permanentRef.current = permanent; }, [permanent]);
+  const stateRef2 = useRef(state);
+  useEffect(() => { stateRef2.current = state; }, [state]);
+
   useEffect(() => {
     if (isRunOver && !gemsAddedRef.current) {
       gemsAddedRef.current = true;
+      const waveReached = stateRef2.current.waveNumber;
+      const p = permanentRef.current;
+      // 解禁できる最大ステージを計算
+      const newMaxUnlocked = STAGE_DEFS.reduce(
+        (max, s) => (waveReached >= s.unlockWave ? Math.max(max, s.id) : max),
+        p.maxUnlockedStage,
+      );
       const updated: PermanentData = {
-        ...permanentRef.current,
-        gems: permanentRef.current.gems + gemsEarned,
+        ...p,
+        gems: p.gems + gemsEarned,
+        maxUnlockedStage: newMaxUnlocked,
       };
       onPermanentUpdate(updated);
     }
@@ -98,6 +110,10 @@ const Game: React.FC<GameProps> = ({ saveData, permanent, onPermanentUpdate, onG
   const handleLabPurchase = (upgradeId: string) => {
     const updated = purchasePermanentUpgrade(permanent, upgradeId);
     if (updated) onPermanentUpdate(updated);
+  };
+
+  const handleSelectStage = (stageId: number) => {
+    onPermanentUpdate({ ...permanent, currentStage: stageId });
   };
 
   return (
@@ -148,6 +164,7 @@ const Game: React.FC<GameProps> = ({ saveData, permanent, onPermanentUpdate, onG
         visible={showLab}
         permanent={permanent}
         onPurchase={handleLabPurchase}
+        onSelectStage={handleSelectStage}
         onClose={() => {
           setShowLab(false);
           onGoToStart();

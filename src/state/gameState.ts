@@ -6,6 +6,7 @@
 import { ENEMY_DEFS, CHARACTER_CLASSES } from '../constants/gameData';
 import { GAME_CONFIG } from '../constants/gameConfig';
 import { getSkillDef } from '../constants/skillData';
+import { STAGE_DEFS } from './permanentState';
 import type { Enemy, CharacterClass, Projectile } from '../types/gameTypes';
 import type { AcquiredSkill, SkillEffect } from '../types/skillTypes';
 
@@ -127,13 +128,14 @@ export function findClosestEnemy(enemies: Enemy[]): Enemy | null {
 }
 
 let enemyIdCounter = 0;
-export function createEnemy(level: number, isBoss = false): Enemy {
+export function createEnemy(level: number, stage: number, isBoss = false): Enemy {
+  const stageDef     = STAGE_DEFS.find((s) => s.id === stage) ?? STAGE_DEFS[0];
   const maxTierIndex = Math.min(Math.floor(level / GAME_CONFIG.ENEMY_TIER_LEVEL_DIVISOR), ENEMY_DEFS.length - 1);
-  const def = ENEMY_DEFS[Math.floor(Math.random() * (maxTierIndex + 1))] ?? ENEMY_DEFS[0];
-  const scaleFactor = 1 + level * GAME_CONFIG.ENEMY_HP_SCALE_PER_LEVEL;
-  const baseHp = isBoss ? Math.floor(def.baseHp * GAME_CONFIG.BOSS_HP_MULTIPLIER) : def.baseHp;
-  const hp = Math.floor(baseHp * scaleFactor);
-  const rewardMultiplier = isBoss ? GAME_CONFIG.BOSS_REWARD_MULTIPLIER : 1;
+  const def          = ENEMY_DEFS[Math.floor(Math.random() * (maxTierIndex + 1))] ?? ENEMY_DEFS[0];
+  const scaleFactor  = 1 + level * GAME_CONFIG.ENEMY_HP_SCALE_PER_LEVEL;
+  const baseHp       = isBoss ? Math.floor(def.baseHp * GAME_CONFIG.BOSS_HP_MULTIPLIER) : def.baseHp;
+  const hp           = Math.floor(baseHp * scaleFactor * stageDef.hpMultiplier);
+  const rewardMult   = (isBoss ? GAME_CONFIG.BOSS_REWARD_MULTIPLIER : 1) * stageDef.rewardMultiplier;
   return {
     id: enemyIdCounter++,
     def,
@@ -142,8 +144,8 @@ export function createEnemy(level: number, isBoss = false): Enemy {
     x: GAME_CONFIG.ENEMY_SPAWN_X,
     isBoss,
     reward: {
-      gold: Math.floor(def.reward.gold * (1 + level * GAME_CONFIG.ENEMY_GOLD_SCALE_PER_LEVEL) * rewardMultiplier),
-      xp:   Math.floor(def.reward.xp   * (1 + level * GAME_CONFIG.ENEMY_XP_SCALE_PER_LEVEL) * rewardMultiplier),
+      gold: Math.floor(def.reward.gold * (1 + level * GAME_CONFIG.ENEMY_GOLD_SCALE_PER_LEVEL) * rewardMult),
+      xp:   Math.floor(def.reward.xp   * (1 + level * GAME_CONFIG.ENEMY_XP_SCALE_PER_LEVEL)  * rewardMult),
     },
   };
 }

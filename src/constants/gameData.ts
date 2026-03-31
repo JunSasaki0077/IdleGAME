@@ -22,25 +22,40 @@ export const CHARACTER_CLASSES: CharacterClass[] = [
 // ─────────────────────────────────────────
 
 export const ENEMY_DEFS: EnemyDef[] = [
-  // Tier 1 - 初級
-  { name: 'スライム',   emoji: '🟢', baseHp: 60,   reward: { gold: 5,   xp: 8   }, size: 32, sprite: 'slime'    },
-  { name: 'コウモリ',   emoji: '🦇', baseHp: 50,   reward: { gold: 4,   xp: 7   }, size: 30, sprite: 'kobold'   }, // TODO: bat スプライト追加予定
+  // Tier 1 - 初級（Lv0〜）
+  { name: 'ラット',       emoji: '🐀', baseHp: 45,   reward: { gold: 3,   xp: 6   }, size: 28, sprite: 'kobold'   },
+  { name: 'コウモリ',     emoji: '🦇', baseHp: 50,   reward: { gold: 4,   xp: 7   }, size: 30, sprite: 'kobold'   },
+  { name: 'スライム',     emoji: '🟢', baseHp: 60,   reward: { gold: 5,   xp: 8   }, size: 32, sprite: 'slime'    },
+  { name: 'コボルド',     emoji: '🐊', baseHp: 75,   reward: { gold: 6,   xp: 10  }, size: 32, sprite: 'kobold'   },
+  { name: 'リザードマン', emoji: '🦎', baseHp: 100,  reward: { gold: 8,   xp: 14  }, size: 34, sprite: 'goblin'   },
 
-  // Tier 2 - 中級
-  { name: 'ゴブリン',   emoji: '👺', baseHp: 120,  reward: { gold: 12,  xp: 18  }, size: 36, sprite: 'goblin'   },
-  { name: 'オオカミ',   emoji: '🐺', baseHp: 140,  reward: { gold: 15,  xp: 22  }, size: 38, sprite: 'kobold'   }, // TODO: wolf スプライト追加予定
-  { name: 'ゾンビ',     emoji: '🧟', baseHp: 160,  reward: { gold: 18,  xp: 25  }, size: 40, sprite: 'skeleton' },
+  // Tier 2 - 中級（Lv8〜）
+  { name: 'ゴブリン',     emoji: '👺', baseHp: 120,  reward: { gold: 12,  xp: 18  }, size: 36, sprite: 'goblin'   },
+  { name: 'ホブゴブリン', emoji: '👿', baseHp: 135,  reward: { gold: 13,  xp: 20  }, size: 36, sprite: 'goblin'   },
+  { name: 'オオカミ',     emoji: '🐺', baseHp: 150,  reward: { gold: 15,  xp: 22  }, size: 38, sprite: 'kobold'   },
+  { name: 'マミー',       emoji: '⚰️', baseHp: 170,  reward: { gold: 17,  xp: 26  }, size: 38, sprite: 'skeleton' },
+  { name: 'ゾンビ',       emoji: '🧟', baseHp: 190,  reward: { gold: 19,  xp: 28  }, size: 40, sprite: 'skeleton' },
 
-  // Tier 3 - 上級
-  { name: 'オーク',     emoji: '👹', baseHp: 360,  reward: { gold: 35,  xp: 50  }, size: 42, sprite: 'orc'      },
-  { name: 'スケルトン', emoji: '💀', baseHp: 400,  reward: { gold: 40,  xp: 60  }, size: 40, sprite: 'skeleton' },
-  { name: 'デーモン',   emoji: '😈', baseHp: 500,  reward: { gold: 50,  xp: 75  }, size: 44, sprite: 'dragon'   }, // TODO: demon スプライト追加予定
+  // Tier 3 - 上級（Lv16〜）
+  { name: 'ウィッチ',     emoji: '🧙‍♀️', baseHp: 240,  reward: { gold: 24,  xp: 35  }, size: 40, sprite: 'goblin'   },
+  { name: 'トロール',     emoji: '🧌', baseHp: 310,  reward: { gold: 30,  xp: 44  }, size: 42, sprite: 'orc'      },
+  { name: 'オーク',       emoji: '👹', baseHp: 380,  reward: { gold: 36,  xp: 52  }, size: 42, sprite: 'orc'      },
+  { name: 'スケルトン',   emoji: '💀', baseHp: 440,  reward: { gold: 42,  xp: 62  }, size: 40, sprite: 'skeleton' },
+  { name: 'ワイバーン',   emoji: '🦕', baseHp: 520,  reward: { gold: 52,  xp: 78  }, size: 44, sprite: 'dragon'   },
+  { name: 'デーモン',     emoji: '😈', baseHp: 620,  reward: { gold: 62,  xp: 92  }, size: 44, sprite: 'dragon'   },
 
-  // Tier 4 - 最上級
-  { name: 'ドラゴン',   emoji: '🐉', baseHp: 1000, reward: { gold: 120, xp: 180 }, size: 52, sprite: 'dragon'   },
-  { name: 'タイタン',   emoji: '🗿', baseHp: 1200, reward: { gold: 150, xp: 220 }, size: 50, sprite: 'orc'      },
-  { name: 'クラーケン', emoji: '🐙', baseHp: 1400, reward: { gold: 180, xp: 260 }, size: 54, sprite: 'dragon'   },
-  { name: 'ヒドラ',     emoji: '🐍', baseHp: 1600, reward: { gold: 210, xp: 300 }, size: 56, sprite: 'dragon'   },
+  // Tier 4 - 強敵（Lv24〜）
+  { name: 'アイアンゴーレム', emoji: '🤖', baseHp: 800,  reward: { gold: 85,  xp: 125 }, size: 48, sprite: 'orc'      },
+  { name: 'フェニックス',     emoji: '🔥', baseHp: 950,  reward: { gold: 100, xp: 150 }, size: 48, sprite: 'dragon'   },
+  { name: 'ドラゴン',         emoji: '🐉', baseHp: 1100, reward: { gold: 125, xp: 185 }, size: 52, sprite: 'dragon'   },
+  { name: 'ケルベロス',       emoji: '🐕', baseHp: 1300, reward: { gold: 155, xp: 228 }, size: 50, sprite: 'orc'      },
+  { name: 'タイタン',         emoji: '🗿', baseHp: 1500, reward: { gold: 180, xp: 265 }, size: 52, sprite: 'orc'      },
+
+  // Tier 5 - 最上級（Lv32〜）
+  { name: 'クラーケン',     emoji: '🐙', baseHp: 1800, reward: { gold: 215, xp: 320 }, size: 54, sprite: 'dragon'   },
+  { name: 'ヒドラ',         emoji: '🐍', baseHp: 2200, reward: { gold: 265, xp: 390 }, size: 56, sprite: 'dragon'   },
+  { name: 'アビスロード',   emoji: '👁️', baseHp: 2700, reward: { gold: 320, xp: 480 }, size: 56, sprite: 'dragon'   },
+  { name: 'デミゴッド',     emoji: '⚡', baseHp: 3300, reward: { gold: 390, xp: 580 }, size: 58, sprite: 'skeleton' },
 ];
 
 // ─────────────────────────────────────────

@@ -18,14 +18,37 @@ export type PermanentUpgradeDef = {
   maxLv: number;
 };
 
+export type StageDef = {
+  id: number;
+  name: string;
+  icon: string;
+  hpMultiplier: number;
+  rewardMultiplier: number;
+  unlockWave: number; // このウェーブ数に到達すると解禁
+};
+
 export type PermanentData = {
   gems: number;
   upgrades: Record<string, number>; // id -> level
+  currentStage: number;
+  maxUnlockedStage: number;
 };
 
 // ─────────────────────────────────────────
 //  永続アップグレード定義
 // ─────────────────────────────────────────
+
+// ─────────────────────────────────────────
+//  ステージ定義
+// ─────────────────────────────────────────
+
+export const STAGE_DEFS: StageDef[] = [
+  { id: 1, name: '平原',   icon: '🌿', hpMultiplier: 1.0,  rewardMultiplier: 1.0,  unlockWave: 0  },
+  { id: 2, name: '森林',   icon: '🌲', hpMultiplier: 2.0,  rewardMultiplier: 1.8,  unlockWave: 5  },
+  { id: 3, name: '洞窟',   icon: '⛏️', hpMultiplier: 3.5,  rewardMultiplier: 3.0,  unlockWave: 15 },
+  { id: 4, name: '魔境',   icon: '🔥', hpMultiplier: 6.0,  rewardMultiplier: 5.0,  unlockWave: 30 },
+  { id: 5, name: '奈落',   icon: '💀', hpMultiplier: 10.0, rewardMultiplier: 8.0,  unlockWave: 50 },
+];
 
 export const PERMANENT_UPGRADES: PermanentUpgradeDef[] = [
   {
@@ -65,6 +88,8 @@ export const PERMANENT_UPGRADES: PermanentUpgradeDef[] = [
 export const INITIAL_PERMANENT: PermanentData = {
   gems: 0,
   upgrades: {},
+  currentStage: 1,
+  maxUnlockedStage: 1,
 };
 
 // ─────────────────────────────────────────
@@ -102,6 +127,7 @@ export function purchasePermanentUpgrade(
   const cost = def.gemCost(currentLv);
   if (permanent.gems < cost) return null;
   return {
+    ...permanent,
     gems: permanent.gems - cost,
     upgrades: { ...permanent.upgrades, [upgradeId]: currentLv + 1 },
   };

@@ -73,6 +73,9 @@ export const GAME_CONFIG = {
   SPAWN_INTERVAL_BASE: 3.5,       // Wave 1のスポーン間隔（秒）
   SPAWN_INTERVAL_PER_WAVE: 0.1,   // ウェーブごとの短縮量（秒）
   SPAWN_INTERVAL_MIN: 0.8,        // スポーン間隔の最小値（秒）
+  SPAWN_BATCH_BASE: 1,            // Wave 1の1回スポーン数
+  SPAWN_BATCH_PER_WAVES: 3,       // この数のウェーブごとにバッチサイズ+1
+  SPAWN_BATCH_MAX: 4,             // 1回スポーンの最大数
   WAVE_BREAK_DURATION: 3.0,       // ウェーブ間の休憩時間（秒）
   BOSS_WAVE_INTERVAL: 5,          // ボスが出現するウェーブ間隔（5の倍数）
 

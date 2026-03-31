@@ -56,9 +56,11 @@ export type GameLoopResult = {
 type GameLoopOptions = {
   initialState?: GameState;
   initialUpgrades?: Upgrade[];
+  stage?: number;
 };
 
 export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
+  const stage = options.stage ?? 1;
   const [state, setState]                 = useState<GameState>(options.initialState ?? INITIAL_STATE);
   const [upgrades, setUpgrades]           = useState<Upgrade[]>(options.initialUpgrades ?? UPGRADES);
   const [damageNumbers, setDamageNumbers] = useState<DamageNumber[]>([]);
@@ -202,14 +204,24 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
 
         // ── 敵スポーン（休憩中以外） ──
         if (!s.waveBreaking && s.waveEnemiesSpawned < s.waveEnemiesTotal && s.spawnTimer >= s.spawnInterval) {
-          const isLastEnemy = s.waveEnemiesSpawned === s.waveEnemiesTotal - 1;
-          const isBossWave  = s.waveNumber % GAME_CONFIG.BOSS_WAVE_INTERVAL === 0;
-          const isBoss      = isLastEnemy && isBossWave;
+          const isBossWave = s.waveNumber % GAME_CONFIG.BOSS_WAVE_INTERVAL === 0;
+          const batchSize  = Math.min(
+            GAME_CONFIG.SPAWN_BATCH_BASE + Math.floor((s.waveNumber - 1) / GAME_CONFIG.SPAWN_BATCH_PER_WAVES),
+            GAME_CONFIG.SPAWN_BATCH_MAX,
+          );
+          const remaining  = s.waveEnemiesTotal - s.waveEnemiesSpawned;
+          const toSpawn    = Math.min(batchSize, remaining);
+          const newEnemies = Array.from({ length: toSpawn }, (_, i) => {
+            const spawned   = s.waveEnemiesSpawned + i;
+            const isLast    = spawned === s.waveEnemiesTotal - 1;
+            const isBoss    = isLast && isBossWave;
+            return createEnemy(s.level, stage, isBoss);
+          });
           s = {
             ...s,
             spawnTimer: 0,
-            waveEnemiesSpawned: s.waveEnemiesSpawned + 1,
-            enemies: [...s.enemies, createEnemy(s.level, isBoss)],
+            waveEnemiesSpawned: s.waveEnemiesSpawned + toSpawn,
+            enemies: [...s.enemies, ...newEnemies],
           };
         }
 
