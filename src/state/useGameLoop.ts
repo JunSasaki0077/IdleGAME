@@ -215,7 +215,8 @@ export function useGameLoop(options: GameLoopOptions = {}): GameLoopResult {
             const spawned   = s.waveEnemiesSpawned + i;
             const isLast    = spawned === s.waveEnemiesTotal - 1;
             const isBoss    = isLast && isBossWave;
-            return createEnemy(s.level, stage, isBoss);
+            // バッチ内でX方向にずらして縦列の群れを表現
+            return createEnemy(s.level, stage, isBoss, i * 7);
           });
           s = {
             ...s,

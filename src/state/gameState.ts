@@ -128,7 +128,7 @@ export function findClosestEnemy(enemies: Enemy[]): Enemy | null {
 }
 
 let enemyIdCounter = 0;
-export function createEnemy(level: number, stage: number, isBoss = false): Enemy {
+export function createEnemy(level: number, stage: number, isBoss = false, xOffset = 0): Enemy {
   const stageDef     = STAGE_DEFS.find((s) => s.id === stage) ?? STAGE_DEFS[0];
   const maxTierIndex = Math.min(Math.floor(level / GAME_CONFIG.ENEMY_TIER_LEVEL_DIVISOR), ENEMY_DEFS.length - 1);
   const def          = ENEMY_DEFS[Math.floor(Math.random() * (maxTierIndex + 1))] ?? ENEMY_DEFS[0];
@@ -141,7 +141,9 @@ export function createEnemy(level: number, stage: number, isBoss = false): Enemy
     def,
     hp,
     maxHp: hp,
-    x: GAME_CONFIG.ENEMY_SPAWN_X,
+    x: GAME_CONFIG.ENEMY_SPAWN_X + xOffset,
+    yOffset: isBoss ? 0 : (Math.random() - 0.5) * GAME_CONFIG.ENEMY_Y_SPREAD,
+    sizeScale: isBoss ? 1 : 0.75 + Math.random() * 0.5,
     isBoss,
     reward: {
       gold: Math.floor(def.reward.gold * (1 + level * GAME_CONFIG.ENEMY_GOLD_SCALE_PER_LEVEL) * rewardMult),

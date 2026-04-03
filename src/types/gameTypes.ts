@@ -38,6 +38,8 @@ export type Enemy = {
   hp: number;
   maxHp: number;
   x: number;
+  yOffset: number;   // 縦方向ランダムオフセット（%）- 群れの奥行き表現
+  sizeScale: number; // サイズ微変動（0.75〜1.25）
   isBoss?: boolean;
   reward: {
     gold: number;

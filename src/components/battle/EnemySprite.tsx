@@ -73,14 +73,15 @@ export const EnemySprite: React.FC<Props> = React.memo(({ enemy }) => {
   const frameIndex = useFrameAnimation(frames ? frames.length : null, ANIM_SPEED);
 
   const hpRatio = clampRatio(enemy.hp, enemy.maxHp);
-  const sizeMultiplier = enemy.isBoss ? GAME_CONFIG.BOSS_SIZE_MULTIPLIER : 1;
-  const spriteSize = (enemy.isBoss ? 160 : 120) * sizeMultiplier;
+  const sizeMultiplier = enemy.isBoss ? GAME_CONFIG.BOSS_SIZE_MULTIPLIER : enemy.sizeScale;
+  const spriteSize = (enemy.isBoss ? 160 : 90) * sizeMultiplier;
   const hpBarColor = enemy.isBoss ? '#ff6600' : '#e74c3c';
+  const bottomPct = 10 + enemy.yOffset;
 
   return (
     <View
-      className="absolute bottom-[10%] items-center z-[9]"
-      style={{ left: `${enemy.x}%`, transform: [{ translateX: -spriteSize / 2 }] }}
+      className="absolute items-center z-[9]"
+      style={{ bottom: `${bottomPct}%`, left: `${enemy.x}%`, transform: [{ translateX: -spriteSize / 2 }] }}
     >
       {/* ボスマーク */}
       {enemy.isBoss && (
@@ -109,7 +110,7 @@ export const EnemySprite: React.FC<Props> = React.memo(({ enemy }) => {
           resizeMode="contain"
         />
       ) : (
-        <Text style={{ fontSize: enemy.def.size * sizeMultiplier, lineHeight: 52 }}>
+        <Text style={{ fontSize: enemy.def.size * sizeMultiplier, lineHeight: enemy.def.size * sizeMultiplier + 4 }}>
           {enemy.def.emoji}
         </Text>
       )}
@@ -117,10 +118,12 @@ export const EnemySprite: React.FC<Props> = React.memo(({ enemy }) => {
   );
 }, (prev, next) => {
   return (
-    prev.enemy.id     === next.enemy.id     &&
-    prev.enemy.hp     === next.enemy.hp     &&
-    prev.enemy.x      === next.enemy.x      &&
-    prev.enemy.isBoss === next.enemy.isBoss &&
+    prev.enemy.id        === next.enemy.id        &&
+    prev.enemy.hp        === next.enemy.hp        &&
+    prev.enemy.x         === next.enemy.x         &&
+    prev.enemy.yOffset   === next.enemy.yOffset   &&
+    prev.enemy.sizeScale === next.enemy.sizeScale &&
+    prev.enemy.isBoss    === next.enemy.isBoss    &&
     prev.enemy.def.sprite === next.enemy.def.sprite &&
     prev.enemy.def.size   === next.enemy.def.size
   );

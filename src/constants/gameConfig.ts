@@ -67,20 +67,23 @@ export const GAME_CONFIG = {
   PROJECTILE_DESPAWN_X: 115,      // 弾が画面外とみなされるX座標（%）
 
   // ウェーブシステム
-  WAVE_BASE_ENEMIES: 12,           // Wave 1の敵数
-  WAVE_ENEMIES_PER_WAVE: 3,        // ウェーブごとの追加敵数
-  WAVE_MAX_ENEMIES: 50,            // ウェーブあたりの最大敵数
-  SPAWN_INTERVAL_BASE: 2.5,        // Wave 1のスポーン間隔（秒）
-  SPAWN_INTERVAL_PER_WAVE: 0.08,   // ウェーブごとの短縮量（秒）
-  SPAWN_INTERVAL_MIN: 0.5,         // スポーン間隔の最小値（秒）
-  SPAWN_BATCH_BASE: 1,             // Wave 1の1回スポーン数
+  WAVE_BASE_ENEMIES: 20,           // Wave 1の敵数
+  WAVE_ENEMIES_PER_WAVE: 5,        // ウェーブごとの追加敵数
+  WAVE_MAX_ENEMIES: 100,           // ウェーブあたりの最大敵数
+  SPAWN_INTERVAL_BASE: 1.5,        // Wave 1のスポーン間隔（秒）
+  SPAWN_INTERVAL_PER_WAVE: 0.05,   // ウェーブごとの短縮量（秒）
+  SPAWN_INTERVAL_MIN: 0.3,         // スポーン間隔の最小値（秒）
+  SPAWN_BATCH_BASE: 2,             // Wave 1の1回スポーン数
   SPAWN_BATCH_PER_WAVES: 2,        // この数のウェーブごとにバッチサイズ+1
-  SPAWN_BATCH_MAX: 8,              // 1回スポーンの最大数
-  WAVE_BREAK_DURATION: 3.0,       // ウェーブ間の休憩時間（秒）
+  SPAWN_BATCH_MAX: 12,             // 1回スポーンの最大数
+  WAVE_BREAK_DURATION: 1.5,       // ウェーブ間の休憩時間（秒）
   BOSS_WAVE_INTERVAL: 5,          // ボスが出現するウェーブ間隔（5の倍数）
 
   // ジェム・ラボシステム
   GEMS_PER_WAVE: 3,               // ウェーブクリアごとのジェム獲得数
+
+  // 群れ表現
+  ENEMY_Y_SPREAD: 14,             // 敵の縦方向ばらつき幅（%・群れの奥行き表現）
 } as const;
 
 // HERO_POSITION_X + ENEMY_STOP_OFFSET の合成値（useGameLoop・BattleField共通）
