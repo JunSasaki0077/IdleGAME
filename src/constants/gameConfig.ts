@@ -67,16 +67,16 @@ export const GAME_CONFIG = {
   PROJECTILE_DESPAWN_X: 115,      // 弾が画面外とみなされるX座標（%）
 
   // ウェーブシステム
-  WAVE_BASE_ENEMIES: 20,           // Wave 1の敵数
-  WAVE_ENEMIES_PER_WAVE: 5,        // ウェーブごとの追加敵数
-  WAVE_MAX_ENEMIES: 100,           // ウェーブあたりの最大敵数
-  SPAWN_INTERVAL_BASE: 1.5,        // Wave 1のスポーン間隔（秒）
-  SPAWN_INTERVAL_PER_WAVE: 0.05,   // ウェーブごとの短縮量（秒）
-  SPAWN_INTERVAL_MIN: 0.3,         // スポーン間隔の最小値（秒）
-  SPAWN_BATCH_BASE: 2,             // Wave 1の1回スポーン数
-  SPAWN_BATCH_PER_WAVES: 2,        // この数のウェーブごとにバッチサイズ+1
-  SPAWN_BATCH_MAX: 12,             // 1回スポーンの最大数
-  WAVE_BREAK_DURATION: 1.5,       // ウェーブ間の休憩時間（秒）
+  WAVE_BASE_ENEMIES: 40,           // Wave 1の敵数
+  WAVE_ENEMIES_PER_WAVE: 10,       // ウェーブごとの追加敵数
+  WAVE_MAX_ENEMIES: 300,           // ウェーブあたりの最大敵数
+  SPAWN_INTERVAL_BASE: 0.8,        // Wave 1のスポーン間隔（秒）
+  SPAWN_INTERVAL_PER_WAVE: 0.03,   // ウェーブごとの短縮量（秒）
+  SPAWN_INTERVAL_MIN: 0.15,        // スポーン間隔の最小値（秒）
+  SPAWN_BATCH_BASE: 5,             // Wave 1の1回スポーン数
+  SPAWN_BATCH_PER_WAVES: 1,        // この数のウェーブごとにバッチサイズ+1
+  SPAWN_BATCH_MAX: 25,             // 1回スポーンの最大数
+  WAVE_BREAK_DURATION: 1.0,       // ウェーブ間の休憩時間（秒）
   BOSS_WAVE_INTERVAL: 5,          // ボスが出現するウェーブ間隔（5の倍数）
 
   // ジェム・ラボシステム
